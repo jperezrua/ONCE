@@ -19,17 +19,16 @@ class COCOBase(data.Dataset):
                    dtype=np.float32).reshape(1, 1, 3)
 
   def __init__(self, opt, split):
-    super(COCO, self).__init__()
+    super(COCOBase, self).__init__()
     self.data_dir = os.path.join(opt.data_dir, 'coco')
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
+    print(100*'*')
+    print(self.img_dir, split)
 
-
-    splitname = 'trainval' if split=='train' else 'val'
-
-    if opt.task == 'basedet':
+    if opt.task == 'ctdet':
       self.annot_path = os.path.join(
         self.data_dir, 'annotations', 
-        'instances_base_{}2017.json').format(splitname)
+        'instances_base_{}2017.json').format(split)
       
     self.max_objs = 128
     
