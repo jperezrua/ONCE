@@ -6,6 +6,7 @@ from .sample.ddd import DddDataset
 from .sample.exdet import EXDetDataset
 from .sample.ctdet import CTDetDataset
 from .sample.multi_pose import MultiPoseDataset
+from .sample.epdet import EpisodicDetDataset
 
 from .dataset.coco import COCO
 from .dataset.pascal import PascalVOC
@@ -26,7 +27,8 @@ _sample_factory = {
   'exdet': EXDetDataset,
   'ctdet': CTDetDataset,
   'ddd': DddDataset,
-  'multi_pose': MultiPoseDataset
+  'multi_pose': MultiPoseDataset,
+  'epdet': EpisodicDetDataset
 }
 
 
