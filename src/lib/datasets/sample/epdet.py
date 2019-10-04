@@ -149,7 +149,7 @@ class EpisodicDetDataset(data.Dataset):
           draw_dense_reg(dense_wh, hm.max(axis=0), ct_int, wh[k], radius)
         gt_det.append([ct[0] - w / 2, ct[1] - h / 2, 
                        ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
-    return hm, reg_mask, ind, wh
+    return hm, reg_mask, reg, dense_wh, ind, wh
 
   def _process_support_set(self, support_imgs, support_anns):
 
@@ -177,10 +177,10 @@ class EpisodicDetDataset(data.Dataset):
     supp_imgs = [cv2.imread(img_path) for img_path in support_paths]
 
     # 3. Process query image and get scale and center
-    inp, inp_dim, flipped, center, scale = self._process_query(query_img)
+    inp, inp_dim, flipped, center, scale = self._process_query(query_img, augment=(self.split=='train'))
 
     # 4. Process query gt output
-    hm, reg_mask, ind, wh = self._process_query_out(query_img, query_anns, 
+    hm, reg_mask, reg, dense_wh, ind, wh = self._process_query_out(query_img, query_anns, 
                                           flipped, center, scale, inp_dim, num_objs)
     
     # 5. Process support imgs
@@ -194,7 +194,7 @@ class EpisodicDetDataset(data.Dataset):
       ret.update({'dense_wh': dense_wh, 'dense_wh_mask': dense_wh_mask})
       del ret['wh']
     elif self.opt.cat_spec_wh:
-      ret.update({'cat_spec_wh': cat_spec_wh, 'cat_spec_mask': cat_spec_mask})
+      #ret.update({'cat_spec_wh': cat_spec_wh, 'cat_spec_mask': cat_spec_mask})#TODO:??
       del ret['wh']
     if self.opt.reg_offset:
       ret.update({'reg': reg})
