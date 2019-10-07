@@ -16,6 +16,7 @@ class COCOEpisodic(data.Dataset):
                    dtype=np.float32).reshape(1, 1, 3)
   std  = np.array([0.28863828, 0.27408164, 0.27809835],
                    dtype=np.float32).reshape(1, 1, 3)
+  num_classes = 1
 
   def __init__(self, opt, split, base=True):
     super(COCOEpisodic, self).__init__()
@@ -26,6 +27,8 @@ class COCOEpisodic(data.Dataset):
       self.num_classes = 60
     else:
       self.num_classes = 20
+
+    print('COCOEPisodic with {} classes'.format(self.num_classes))
 
     self.data_dir = os.path.join(opt.data_dir, 'coco')
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
@@ -129,7 +132,7 @@ class COCOEpisodic(data.Dataset):
     self.query_images = self.coco.getImgIds()
     #self.support_per_cat = {cat:self.coco_support.getImgIds(catIds=cat) for cat in self._valid_ids}
 
-    self.num_samples = len(self.images)
+    self.num_samples = len(self.query_images)
 
     print('Loaded {} {} samples'.format(split, self.num_samples))
 

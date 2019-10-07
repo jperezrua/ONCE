@@ -14,9 +14,9 @@ from utils.post_process import ctdet_post_process
 from utils.oracle_utils import gen_oracle_map
 from .base_ep_trainer import BaseEpisodicTrainer
 
-class CtdetLoss(torch.nn.Module):
+class EpdetLoss(torch.nn.Module):
   def __init__(self, opt):
-    super(CtdetLoss, self).__init__()
+    super(EpdetLoss, self).__init__()
     self.crit = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
     self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
               RegLoss() if opt.reg_loss == 'sl1' else None
@@ -73,13 +73,13 @@ class CtdetLoss(torch.nn.Module):
                   'wh_loss': wh_loss, 'off_loss': off_loss}
     return loss, loss_stats
 
-class EpisodicDetTrainer (BaseTrainer):
+class EpisodicDetTrainer (BaseEpisodicTrainer):
   def __init__(self, opt, model, optimizer=None):
     super(EpisodicDetTrainer , self).__init__(opt, model, optimizer=optimizer)
   
   def _get_losses(self, opt):
     loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss']
-    loss = CtdetLoss(opt)
+    loss = EpdetLoss(opt)
     return loss_states, loss
 
   def debug(self, batch, output, iter_id):

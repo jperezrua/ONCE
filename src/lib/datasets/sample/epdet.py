@@ -31,25 +31,25 @@ class EpisodicDetDataset(data.Dataset):
     query_id  = self.query_images[index]
     file_name = self.coco.loadImgs(ids=[query_id])[0]['file_name']
     img_path  = os.path.join(self.img_dir, file_name)
-    ann_ids   = self.coco.getAnnIds(imgIds=[query_id]) 
+    ann_ids   = self.coco.getAnnIds(imgIds=[query_id])
     anns      = self.coco.loadAnns(ids=ann_ids)
     cats_anns = np.unique([a['category_id'] for a in anns])
     query_cat = np.random.choice(cats_anns)
     query_anns= [a for a in anns if a['category_id']==query_cat]
-    return img_path, query_anns, query_cat
+    return img_path, query_anns, query_cat, query_id
 
   def _sample_support_set(self, cat_id):
-    img_ids    = np.random.choice(self.coco_support.getImgIds(catIds=[cat_id]), self.k_shots)
-    file_names = self.coco_support.loadImgs(ids=[img_ids])
+    img_ids    = np.random.choice(self.coco_support.getImgIds(catIds=[cat_id]), self.k_shots).tolist()
+    img_items  = self.coco_support.loadImgs(ids=img_ids)
 
     img_paths = []
     supp_anns = []
 
     # this for loop is to take one randomly sampled annotation (give is cat_id) for each of the k_shots
-    for img_id, fn in zip(img_ids, file_names):
-      img_paths.append(os.path.join(self.supp_img_dir, fn))
-      ann_ids    = self.coco.getAnnIds(imgIds=img_id)  
-      anns       = self.coco.loadAnns(ids=ann_ids)
+    for img_id, img_i in zip(img_ids, img_items):
+      img_paths.append(os.path.join(self.supp_img_dir, img_i['file_name']))
+      ann_ids    = self.coco_support.getAnnIds(imgIds=[img_id])
+      anns       = self.coco_support.loadAnns(ids=ann_ids)
       valid_anns = [a for a in anns if a['category_id']==cat_id]
       supp_anns.append(np.random.choice(valid_anns))
 
@@ -109,7 +109,6 @@ class EpisodicDetDataset(data.Dataset):
 
     hm = np.zeros((num_classes, output_h, output_w), dtype=np.float32)
     wh = np.zeros((self.max_objs, 2), dtype=np.float32)
-    dense_wh = np.zeros((2, output_h, output_w), dtype=np.float32)
     reg = np.zeros((self.max_objs, 2), dtype=np.float32)
     ind = np.zeros((self.max_objs), dtype=np.int64)
     reg_mask = np.zeros((self.max_objs), dtype=np.uint8)
@@ -145,18 +144,17 @@ class EpisodicDetDataset(data.Dataset):
         reg_mask[k] = 1
         cat_spec_wh[k, cls_id * 2: cls_id * 2 + 2] = wh[k]
         cat_spec_mask[k, cls_id * 2: cls_id * 2 + 2] = 1
-        if self.opt.dense_wh:
-          draw_dense_reg(dense_wh, hm.max(axis=0), ct_int, wh[k], radius)
         gt_det.append([ct[0] - w / 2, ct[1] - h / 2, 
                        ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
-    return hm, reg_mask, reg, dense_wh, ind, wh
+    return hm, reg_mask, reg, ind, wh
 
   def _process_support_set(self, support_imgs, support_anns):
 
     out_supp = []
     for img, ann in zip(support_imgs, support_anns):
       bbox = self._coco_box_to_bbox(ann['bbox'])
-      inp = img[bbox[0]:bbox[2],bbox[1]:bbox[3],:]
+      x1,y1,x2,y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+      inp = img[y1:y2,x1:x2,:]
       inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
       inp = (inp.astype(np.float32) / 255.)
       inp = (inp - self.mean) / self.std
@@ -168,7 +166,7 @@ class EpisodicDetDataset(data.Dataset):
   def __getitem__(self, index):
 
     # 1. Extract the query image and get annotation for a single category
-    query_path, query_anns, query_cat = self._sample_query(index)
+    query_path, query_anns, query_cat, query_id = self._sample_query(index)
     query_img = cv2.imread(query_path)
     num_objs  = min(len(query_anns), self.max_objs)
 
@@ -180,7 +178,7 @@ class EpisodicDetDataset(data.Dataset):
     inp, inp_dim, flipped, center, scale = self._process_query(query_img, augment=(self.split=='train'))
 
     # 4. Process query gt output
-    hm, reg_mask, reg, dense_wh, ind, wh = self._process_query_out(query_img, query_anns, 
+    hm, reg_mask, reg, ind, wh = self._process_query_out(query_img, query_anns, 
                                           flipped, center, scale, inp_dim, num_objs)
     
     # 5. Process support imgs
@@ -188,19 +186,11 @@ class EpisodicDetDataset(data.Dataset):
     
     ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': supp_imgs}
 
-    if self.opt.dense_wh:
-      hm_a = hm.max(axis=0, keepdims=True)
-      dense_wh_mask = np.concatenate([hm_a, hm_a], axis=0)
-      ret.update({'dense_wh': dense_wh, 'dense_wh_mask': dense_wh_mask})
-      del ret['wh']
-    elif self.opt.cat_spec_wh:
-      #ret.update({'cat_spec_wh': cat_spec_wh, 'cat_spec_mask': cat_spec_mask})#TODO:??
-      del ret['wh']
     if self.opt.reg_offset:
       ret.update({'reg': reg})
     if self.opt.debug > 0 or not self.split == 'train':
       gt_det = np.array(gt_det, dtype=np.float32) if len(gt_det) > 0 else \
                np.zeros((1, 6), dtype=np.float32)
-      meta = {'c': center, 's': scale, 'gt_det': gt_det, 'img_id': img_id}
+      meta = {'c': center, 's': scale, 'gt_det': gt_det, 'img_id': query_id}
       ret['meta'] = meta
     return ret

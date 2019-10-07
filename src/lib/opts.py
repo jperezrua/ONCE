@@ -58,10 +58,9 @@ class opts(object):
                              choices=['white', 'black'])
     
     # model
-    self.parser.add_argument('--arch', default='dla_34', 
+    self.parser.add_argument('--arch', default='res_101', 
                              help='model architecture. Currently tested'
-                                  'res_18 | res_101 | resdcn_18 | resdcn_101 |'
-                                  'dlav0_34 | dla_34 | hourglass')
+                                  'res_18 | res_101')
     self.parser.add_argument('--head_conv', type=int, default=-1,
                              help='conv layer channels for output head'
                                   '0 for no conv layer'
@@ -223,6 +222,10 @@ class opts(object):
                              help='use ground truth human joint local offset.')
     self.parser.add_argument('--eval_oracle_dep', action='store_true', 
                              help='use ground truth depth.')
+    # meta
+    self.parser.add_argument('--k_shots', type=int, default=5)
+    self.parser.add_argument('--supp_w', type=int, default=64)
+    self.parser.add_argument('--supp_h', type=int, default=64)
 
   def parse(self, args=''):
     if args == '':
@@ -328,6 +331,10 @@ class opts(object):
         opt.heads.update({'hm_hp': 17})
       if opt.reg_hp_offset:
         opt.heads.update({'hp_offset': 2})
+    elif opt.task == 'epdet':
+      opt.heads = {'hm': 1, 'wh': 2}      
+      if opt.reg_offset:
+        opt.heads.update({'reg': 2})      
     else:
       assert 0, 'task not defined!'
     print('heads', opt.heads)

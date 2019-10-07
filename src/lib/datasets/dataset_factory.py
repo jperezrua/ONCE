@@ -13,6 +13,7 @@ from .dataset.pascal import PascalVOC
 from .dataset.kitti import KITTI
 from .dataset.coco_hp import COCOHP
 from .dataset.coco_base import COCOBase
+from .dataset.coco_episodic import COCOEpisodic
 
 
 dataset_factory = {
@@ -20,7 +21,8 @@ dataset_factory = {
   'pascal': PascalVOC,
   'kitti': KITTI,
   'coco_hp': COCOHP,
-  'coco_base': COCOBase
+  'coco_base': COCOBase,
+  'coco_ep': COCOEpisodic
 }
 
 _sample_factory = {
@@ -33,6 +35,7 @@ _sample_factory = {
 
 
 def get_dataset(dataset, task):
+  print('Creating Dataset: {}, {} ...'.format(dataset, task))
   class Dataset(dataset_factory[dataset], _sample_factory[task]):
     pass
   return Dataset
