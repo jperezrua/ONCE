@@ -95,13 +95,20 @@ class EpisodicDetTrainer (BaseEpisodicTrainer):
     for i in range(1):
       debugger = Debugger(
         dataset=opt.dataset, ipynb=(opt.debug==3), theme=opt.debugger_theme)
-      img = batch['query'][i].detach().cpu().numpy().transpose(1, 2, 0)
+      img = batch['input'][i].detach().cpu().numpy().transpose(1, 2, 0)
       img = np.clip(((
         img * opt.std + opt.mean) * 255.), 0, 255).astype(np.uint8)
       pred = debugger.gen_colormap(output['hm'][i].detach().cpu().numpy())
       gt = debugger.gen_colormap(batch['hm'][i].detach().cpu().numpy())
       debugger.add_blend_img(img, pred, 'pred_hm')
       debugger.add_blend_img(img, gt, 'gt_hm')
+      debugger.add_img(img, img_id='out_pred')
+
+      for j,bim in enumerate(batch['supp'][i]):
+        s = bim.detach().cpu().numpy().transpose(1, 2, 0)
+        s = np.clip(((s * opt.std + opt.mean) * 255.), 0, 255).astype(np.uint8)
+        debugger.add_img(s, img_id='supp_'+str(j))
+
       debugger.add_img(img, img_id='out_pred')
       for k in range(len(dets[i])):
         if dets[i, k, 4] > opt.center_thresh:

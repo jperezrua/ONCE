@@ -3,6 +3,7 @@
 # Licensed under the MIT License.
 # Written by Bin Xiao (Bin.Xiao@microsoft.com)
 # Modified by Xingyi Zhou
+# Modified by Juan Perez-Rua
 # ------------------------------------------------------------------------------
 
 from __future__ import absolute_import
@@ -129,11 +130,11 @@ class PoseMetaResNet(nn.Module):
             [4, 4, 4],
         )
 
-        block_meta, layers_meta = resnet_spec[10]
+        block_meta, layers_meta = resnet_spec[18]
         reweight_layer = MetaNet(
             block_meta, layers_meta,
             feat_dim=256,
-            in_channels=kwargs['n_shots']*3 if 'n_shots' in kwargs else 5*3, #n_shots images 
+            in_channels=3,
             out_channels=self.heads['hm'],
             kernel_size=1,
             stride=1,
@@ -236,7 +237,7 @@ class PoseMetaResNet(nn.Module):
 
     def init_weights(self, num_layers, pretrained=True):
         if pretrained:
-            # print('=> init resnet deconv weights from normal distribution')
+            print('BASE => init resnet deconv weights from normal distribution')
             for _, m in self.deconv_layers.named_modules():
                 if isinstance(m, nn.ConvTranspose2d):
                     # print('=> init {}.weight as normal(0, 0.001)'.format(name))
@@ -249,7 +250,7 @@ class PoseMetaResNet(nn.Module):
                     # print('=> init {}.bias as 0'.format(name))
                     nn.init.constant_(m.weight, 1)
                     nn.init.constant_(m.bias, 0)
-            # print('=> init final conv weights from normal distribution')
+            print('BASE => init final conv weights from normal distribution')
             for head in self.heads:
               final_layer = self.__getattr__(head)
               for i, m in enumerate(final_layer.modules()):
@@ -269,8 +270,8 @@ class PoseMetaResNet(nn.Module):
             print('=> loading pretrained model {}'.format(url))
             self.load_state_dict(pretrained_state_dict, strict=False)
         else:
-            print('=> imagenet pretrained model dose not exist')
-            print('=> please download it first')
+            print('BASE => imagenet pretrained model dose not exist')
+            print('BASE => please download it first')
             raise ValueError('imagenet pretrained model does not exist')
 
 class MetaNet(nn.Module):
@@ -286,16 +287,25 @@ class MetaNet(nn.Module):
         super(MetaNet, self).__init__()
         self.inplanes = 64
         self.feat_dim = feat_dim
-        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=5, stride=2, padding=2,
+        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=7, stride=2, padding=2,
                                bias=False)
-        self.bn1 = nn.BatchNorm2d(self.inplanes, momentum=BN_MOMENTUM)
+        #self.bn1 = nn.BatchNorm2d(self.inplanes, momentum=BN_MOMENTUM)
+        #self.relu = nn.ReLU(inplace=True)
+        #self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        #self.layer1 = self._make_layer(block,   self.inplanes, layers[0], stride=2)
+        #self.layer2 = self._make_layer(block, 2*self.inplanes, layers[1], stride=2)
+        #self.conv_o = nn.Conv2d(self.inplanes, 256*out_channels, kernel_size=1, stride=1, padding=0,
+        #                       bias=False)
+
+        self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block,   self.inplanes, layers[0], stride=2)
-        self.layer2 = self._make_layer(block, 2*self.inplanes, layers[1], stride=2)
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)                           
         self.conv_o = nn.Conv2d(self.inplanes, 256*out_channels, kernel_size=1, stride=1, padding=0,
                                bias=False)
-                               
         self.init_weights()
 
         self.out_ch = out_channels
@@ -331,13 +341,16 @@ class MetaNet(nn.Module):
             
             yy = self.layer1(yy)
             yy = self.layer2(yy)
+            yy = self.layer3(yy)
+            yy = self.layer4(yy)
+
             yy = self.conv_o(yy)
             #print('yy.size: ', yy.size())
             yy = torch.mean(yy.view(yy.size(0), yy.size(1), -1), dim=2)
             
             yys.append(yy)
 
-        #in this case, the dim 0 is the n_shots, so I avg them
+        #in this case, the dim 0 is the k_shots, so I avg them
         y = torch.mean(torch.stack(yys), dim=0)
         
         batch_size  = x.size(0)
@@ -353,11 +366,11 @@ class MetaNet(nn.Module):
 
     def init_weights(self, pretrained=''):
         if os.path.isfile(pretrained):
-            pretrained_state_dict = torch.load(pretrained_base)
-            logger.info('=> loading pretrained model {}'.format(pretrained))
+            pretrained_state_dict = torch.load(pretrained)
+            print('META => loading pretrained model {}'.format(pretrained))
             self.load_state_dict(pretrained_state_dict, strict=False)
         else:
-            logger.info('=> init weights from normal distribution')
+            print('META => init weights from normal distribution')
             for m in self.modules():
                 if isinstance(m, nn.Conv2d):
                     # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -382,6 +395,6 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
 def get_pose_net(num_layers, heads, head_conv):
   block_class, layers = resnet_spec[num_layers]
 
-  model = PoseResNet(block_class, layers, heads, head_conv=head_conv)
+  model = PoseMetaResNet(block_class, layers, heads, head_conv=head_conv)
   model.init_weights(num_layers, pretrained=True)
   return model

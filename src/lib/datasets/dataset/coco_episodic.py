@@ -28,7 +28,7 @@ class COCOEpisodic(data.Dataset):
     else:
       self.num_classes = 20
 
-    print('COCOEPisodic with {} classes'.format(self.num_classes))
+    print('COCOEpisodic with {} classes'.format(self.num_classes))
 
     self.data_dir = os.path.join(opt.data_dir, 'coco')
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
@@ -41,11 +41,11 @@ class COCOEpisodic(data.Dataset):
         # sampling both the query and support sets				
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
-          'instances_base_train2017.json')
+          'instances_base_{}2017.json'.format(split))
         self.annot_supp_path = os.path.join(
           self.data_dir, 'annotations', 
-          'instances_base_train2017.json')
-        self.supp_img_dir = os.path.join(self.data_dir, 'train2017')
+          'instances_base_{}2017.json'.format(split))
+        self.supp_img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
       else:
         # if 'novel' we will use the instances_novel_train2017.json file for
         # sampling the support set, and instances_novel_val2017.json for query

@@ -100,7 +100,7 @@ class EpisodicDetDataset(data.Dataset):
     return inp, inp_dim, flipped, center, scale
 
   def _process_query_out(self, img, anns, flipped, center, scale, input_dim, num_objs):
-    _, width = img.shape[0], img.shape[1]
+    width = img.shape[1]
     input_h, input_w = input_dim
     output_h = input_h // self.opt.down_ratio
     output_w = input_w // self.opt.down_ratio
@@ -124,7 +124,7 @@ class EpisodicDetDataset(data.Dataset):
       bbox = self._coco_box_to_bbox(ann['bbox'])
       cls_id = 0#TODO: BETTER FIX #int(self.cat_ids[ann['category_id']])
       if flipped:
-        bbox[[0, 2]] = width - bbox[[2, 0]] - width
+        bbox[[0, 2]] = width - bbox[[2, 0]] - 1
       bbox[:2] = affine_transform(bbox[:2], trans_output)
       bbox[2:] = affine_transform(bbox[2:], trans_output)
       bbox[[0, 2]] = np.clip(bbox[[0, 2]], 0, output_w - 1)
@@ -146,21 +146,22 @@ class EpisodicDetDataset(data.Dataset):
         cat_spec_mask[k, cls_id * 2: cls_id * 2 + 2] = 1
         gt_det.append([ct[0] - w / 2, ct[1] - h / 2, 
                        ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
-    return hm, reg_mask, reg, ind, wh
+    return hm, reg_mask, reg, ind, wh, gt_det
 
   def _process_support_set(self, support_imgs, support_anns):
 
     out_supp = []
     for img, ann in zip(support_imgs, support_anns):
       bbox = self._coco_box_to_bbox(ann['bbox'])
-      x1,y1,x2,y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
+      x1,y1,x2,y2 = math.floor(bbox[0]), math.floor(bbox[1]), math.ceil(bbox[2]), math.ceil(bbox[3])
       inp = img[y1:y2,x1:x2,:]
+
       inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
       inp = (inp.astype(np.float32) / 255.)
       inp = (inp - self.mean) / self.std
       inp = inp.transpose(2, 0, 1)
       out_supp.append(inp)
-
+    out_supp = np.stack(out_supp,axis=0)
     return out_supp
 
   def __getitem__(self, index):
@@ -178,7 +179,7 @@ class EpisodicDetDataset(data.Dataset):
     inp, inp_dim, flipped, center, scale = self._process_query(query_img, augment=(self.split=='train'))
 
     # 4. Process query gt output
-    hm, reg_mask, reg, ind, wh = self._process_query_out(query_img, query_anns, 
+    hm, reg_mask, reg, ind, wh, gt_det = self._process_query_out(query_img, query_anns, 
                                           flipped, center, scale, inp_dim, num_objs)
     
     # 5. Process support imgs

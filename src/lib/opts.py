@@ -60,7 +60,7 @@ class opts(object):
     # model
     self.parser.add_argument('--arch', default='res_101', 
                              help='model architecture. Currently tested'
-                                  'res_18 | res_101')
+                                  'res_18 | res_101 | resrw_18')
     self.parser.add_argument('--head_conv', type=int, default=-1,
                              help='conv layer channels for output head'
                                   '0 for no conv layer'
@@ -224,8 +224,8 @@ class opts(object):
                              help='use ground truth depth.')
     # meta
     self.parser.add_argument('--k_shots', type=int, default=5)
-    self.parser.add_argument('--supp_w', type=int, default=64)
-    self.parser.add_argument('--supp_h', type=int, default=64)
+    self.parser.add_argument('--supp_w', type=int, default=96)
+    self.parser.add_argument('--supp_h', type=int, default=96)
 
   def parse(self, args=''):
     if args == '':
