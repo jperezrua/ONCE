@@ -64,18 +64,18 @@ def main(opt):
   )
 
   print('=====> Loading pretrained models')
-  mk,uk = model.load_state_dict(torch.load('../models/coco_base_res18_nohc/model_best.pth')['state_dict'], strict=False)
-  print('MK:    ',mk)
+  #'../models/coco_base_res18_nohc/model_best.pth'
+  mk,uk = model.load_state_dict(torch.load(opt.load_basemodel)['state_dict'], strict=False)
+  print('Missing Keys for base model:    ',mk)
   print('')
-  print('UK:    ',uk)
+  print('Unknown Keys for base model:    ',uk)
 
   print('=====> Loading meta-pretrained models')
-  mk,uk = model.hm.load_state_dict(torch.load('../models/coco_base_res18_nohc/model_best.pth')['state_dict'], strict=False)
-  print('MK:    ',mk)
+  #'../models/coco_base_res18_nohc/model_best.pth'
+  mk,uk = model.hm.load_state_dict(torch.load(opt.load_metamodel)['state_dict'], strict=False)
+  print('Missing Keys for meta model:    ',mk)
   print('')
-  print('UK:    ',uk)
-
-  #exit()
+  print('Unknown Keys for meta model:    ',uk)
 
   print('Starting training...')
   best = 1e10

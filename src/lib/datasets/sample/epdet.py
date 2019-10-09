@@ -148,13 +148,17 @@ class EpisodicDetDataset(data.Dataset):
                        ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
     return hm, reg_mask, reg, ind, wh, gt_det
 
-  def _process_support_set(self, support_imgs, support_anns):
+  def _process_support_set(self, support_imgs, support_anns, augment=False):
 
     out_supp = []
     for img, ann in zip(support_imgs, support_anns):
       bbox = self._coco_box_to_bbox(ann['bbox'])
       x1,y1,x2,y2 = math.floor(bbox[0]), math.floor(bbox[1]), math.ceil(bbox[2]), math.ceil(bbox[3])
       inp = img[y1:y2,x1:x2,:]
+
+      if augment:
+        if np.random.random() < self.opt.flip:
+          inp = inp[:, ::-1, :]
 
       inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
       inp = (inp.astype(np.float32) / 255.)
@@ -183,7 +187,7 @@ class EpisodicDetDataset(data.Dataset):
                                           flipped, center, scale, inp_dim, num_objs)
     
     # 5. Process support imgs
-    supp_imgs = self._process_support_set(supp_imgs, support_anns)
+    supp_imgs = self._process_support_set(supp_imgs, support_anns, augment=(self.split=='train'))
     
     ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': supp_imgs}
 

@@ -45,6 +45,8 @@ class Debugger(object):
       self.names = coco_class_name
     elif num_classes == 1 or dataset == 'coco_ep':
       self.names = ['c_']
+    elif num_classes == 60 or dataset == 'coco_base':
+      self.names = coco_class_name      
     elif num_classes == 20 or dataset == 'pascal':
       self.names = pascal_class_name
     elif dataset == 'gta':

@@ -215,6 +215,16 @@ class PoseMetaResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x, y):
+        x = self.extract_features(x)
+        ret = {}
+        for head in self.heads:
+            if head=='hm':
+                ret[head] = self.__getattr__(head)(y,x)
+            else:
+                ret[head] = self.__getattr__(head)(x)
+        return [ret]
+
+    def extract_features(self,x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -226,14 +236,25 @@ class PoseMetaResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.deconv_layers(x)
+        return x
+
+    def forward_multi_class(self, x, y_codes):
+        x = self.extract_features(x)
         ret = {}
         for head in self.heads:
             if head=='hm':
-                ret[head] = self.__getattr__(head)(y,x)
+                ret[head] = []
+                for y_code in y_codes:
+                    ret[head].append( self.__getattr__(head).apply_code(x, y_code) )
+                ret[head] = torch.cat(ret[head],dim=1)
             else:
                 ret[head] = self.__getattr__(head)(x)
 
         return [ret]
+
+    def precompute_multi_class(self, y_list):
+        y_code_list = self.__getattr__('hm').extract_support_code(y_list)
+        return y_code_list
 
     def init_weights(self, num_layers, pretrained=True):
         if pretrained:
@@ -329,9 +350,22 @@ class MetaNet(nn.Module):
 
 
     def forward(self, y, x):
+        y = self.extract_support_code(y)
+        o = self.apply_code(x, y)
+        return o
 
+    def apply_code(self, x, y_code):
+        batch_size  = x.size(0)
+        outs = torch.nn.functional.conv2d(
+                    x.view(1, batch_size*self.feat_dim, x.size(2), x.size(3)),
+                    y_code.view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
+                    bias=None
+                )
+        outs = outs.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
+        return outs
+
+    def extract_support_code(self, y):
         yys = []
-            
         for shot in range(y.size(1)):
            
             yy = self.conv1(y[:,shot,:,:,:])
@@ -345,24 +379,10 @@ class MetaNet(nn.Module):
             yy = self.layer4(yy)
 
             yy = self.conv_o(yy)
-            #print('yy.size: ', yy.size())
             yy = torch.mean(yy.view(yy.size(0), yy.size(1), -1), dim=2)
-            
             yys.append(yy)
-
-        #in this case, the dim 0 is the k_shots, so I avg them
         y = torch.mean(torch.stack(yys), dim=0)
-        
-        batch_size  = x.size(0)
-        
-        outs = torch.nn.functional.conv2d(
-                    x.view(1, batch_size*self.feat_dim, x.size(2), x.size(3)),
-                    y.view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
-                    bias=None
-                )
-        outs = outs.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
-
-        return outs
+        return y
 
     def init_weights(self, pretrained=''):
         if os.path.isfile(pretrained):

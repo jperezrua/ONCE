@@ -27,6 +27,12 @@ class opts(object):
                                   'or "webcam"')
     self.parser.add_argument('--load_model', default='',
                              help='path to pretrained model')
+    self.parser.add_argument('--load_metamodel', default='',
+                             help='path to pretrained meta-model'
+                             '(if you want to resume training or similar, use the load_model options which loads everything together.)')
+    self.parser.add_argument('--load_basemodel', default='',
+                             help='path to pretrained base-model'
+                             '(if you want to resume training or similar, use the load_model options which loads everything together.)')
     self.parser.add_argument('--resume', action='store_true',
                              help='resume an experiment. '
                                   'Reloaded the optimizer parameter and '
@@ -226,6 +232,7 @@ class opts(object):
     self.parser.add_argument('--k_shots', type=int, default=5)
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
+    self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')
 
   def parse(self, args=''):
     if args == '':
@@ -332,7 +339,10 @@ class opts(object):
       if opt.reg_hp_offset:
         opt.heads.update({'hp_offset': 2})
     elif opt.task == 'epdet':
-      opt.heads = {'hm': 1, 'wh': 2}      
+      if opt.ep_test <= 1:
+        opt.heads = {'hm': 1, 'wh': 2}      
+      else:
+        opt.heads = {'hm': opt.ep_test, 'wh': 2}   
       if opt.reg_offset:
         opt.heads.update({'reg': 2})      
     else:
