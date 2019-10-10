@@ -44,9 +44,9 @@ class Debugger(object):
     elif num_classes == 80 or dataset == 'coco':
       self.names = coco_class_name
     elif num_classes == 1 or dataset == 'coco_ep':
-      self.names = ['c_']
+      self.names = coconovel_class_name
     elif num_classes == 60 or dataset == 'coco_base':
-      self.names = coco_class_name      
+      self.names = cocobase_class_name      
     elif num_classes == 20 or dataset == 'pascal':
       self.names = pascal_class_name
     elif dataset == 'gta':
@@ -459,6 +459,25 @@ coco_class_name = [
      'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
      'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
+
+coconovel_class_name = [
+        "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "boat",
+        "bird", "cat", "dog", "horse", "sheep", "cow", "bottle", "chair", "couch", 
+        "potted plant", "dining table", "tv"
+                  ]    
+                  
+cocobase_class_name = [
+  'truck', 'traffic light', 'fire hydrant',
+  'stop sign', 'parking meter', 'bench', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
+  'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
+  'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+  'skateboard', 'surfboard', 'tennis racket', 'wine glass',
+  'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+  'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
+  'bed', 'toilet',
+  'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
+  'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
+  'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
 color_list = np.array(
         [

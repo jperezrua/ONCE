@@ -175,8 +175,10 @@ class COCOEpisodic(data.Dataset):
     # detections  = self.convert_eval_format(results)
     # json.dump(detections, open(result_json, "w"))
     self.save_results(results, save_dir)
+
     coco_dets = self.coco.loadRes('{}/results.json'.format(save_dir))
     coco_eval = COCOeval(self.coco, coco_dets, "bbox")
+
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()

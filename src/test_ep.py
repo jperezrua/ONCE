@@ -37,11 +37,15 @@ class PrefetchDataset(torch.utils.data.Dataset):
     return bbox
 
   def _get_support_images(self, dataset):
-    support_per_cat = {cat:dataset.coco_support.getImgIds(catIds=cat) for cat in dataset._valid_ids}
+    #support_per_cat = {cat:dataset.coco_support.getImgIds(catIds=cat) for cat in dataset._valid_ids}
+    support_per_cat = [(cat,dataset.coco_support.getImgIds(catIds=cat)) for cat in dataset._valid_ids]
 
     support_images = []
-    for cat in support_per_cat:
-      img_ids    = np.random.choice(dataset.coco_support.getImgIds(catIds=cat), self.opt.k_shots).tolist()    
+    cats = []
+    for elem in support_per_cat:
+      cat = elem[0]
+      cats.append(cat)
+      img_ids    = np.random.choice(elem[1], self.opt.k_shots).tolist()    
       img_items  = dataset.coco_support.loadImgs(ids=img_ids)
 
       img_paths = []
@@ -81,6 +85,7 @@ class PrefetchDataset(torch.utils.data.Dataset):
     device = torch.device('cuda') if self.opt.gpus[0] >= 0 else torch.device('cpu')  
     support_images = support_images.to(device)
     print(support_images.shape, device)
+    print(dataset._valid_ids,cats)
     return support_images
 
   def __getitem__(self, index):
@@ -107,10 +112,11 @@ def prefetch_test(opt):
   opt = opts().update_dataset_info_and_set_heads(opt, Dataset)
   print(opt)
   Logger(opt)
-  Detector = detector_factory[opt.task]
-  
+    
   split = 'val' if not opt.trainval else 'test'
   dataset = Dataset(opt, split, base=False)
+  opt.num_classes = dataset.num_classes
+  Detector = detector_factory[opt.task]
   detector = Detector(opt)
   
   data_loader = torch.utils.data.DataLoader(
@@ -138,48 +144,6 @@ def prefetch_test(opt):
   bar.finish()
   dataset.run_eval(results, opt.save_dir)
 
-def test(opt):
-  os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
-
-  Dataset = dataset_factory[opt.dataset]
-  opt = opts().update_dataset_info_and_set_heads(opt, Dataset)
-  print(opt)
-  Logger(opt)
-  Detector = detector_factory[opt.task]
-  
-  split = 'val' if not opt.trainval else 'test'
-  dataset = Dataset(opt, split)
-  detector = Detector(opt)
-
-  results = {}
-  num_iters = len(dataset)
-  bar = Bar('{}'.format(opt.exp_id), max=num_iters)
-  time_stats = ['tot', 'load', 'pre', 'net', 'dec', 'post', 'merge']
-  avg_time_stats = {t: AverageMeter() for t in time_stats}
-  for ind in range(num_iters):
-    img_id = dataset.images[ind]
-    img_info = dataset.coco.loadImgs(ids=[img_id])[0]
-    img_path = os.path.join(dataset.img_dir, img_info['file_name'])
-
-    if opt.task == 'ddd':
-      ret = detector.run(img_path, img_info['calib'])
-    else:
-      ret = detector.run(img_path)
-    
-    results[img_id] = ret['results']
-
-    Bar.suffix = '[{0}/{1}]|Tot: {total:} |ETA: {eta:} '.format(
-                   ind, num_iters, total=bar.elapsed_td, eta=bar.eta_td)
-    for t in avg_time_stats:
-      avg_time_stats[t].update(ret[t])
-      Bar.suffix = Bar.suffix + '|{} {:.3f} '.format(t, avg_time_stats[t].avg)
-    bar.next()
-  bar.finish()
-  dataset.run_eval(results, opt.save_dir)
-
 if __name__ == '__main__':
   opt = opts().parse()
-  if opt.not_prefetch_test:
-    test(opt)
-  else:
-    prefetch_test(opt)
+  prefetch_test(opt)
