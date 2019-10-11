@@ -65,14 +65,16 @@ def main(opt):
 
   if opt.load_basemodel:
     print('=====> Loading pretrained models')
-    mk,uk = model.load_state_dict(torch.load(opt.load_basemodel)['state_dict'], strict=False)
+    l = torch.load(opt.load_basemodel)['state_dict']
+    mk,uk = model.load_state_dict(l, strict=False)
     print('Missing Keys for base model:    ',mk)
     print('')
     print('Unknown Keys for base model:    ',uk)
 
   if opt.load_metamodel:
     print('=====> Loading meta-pretrained models')
-    mk,uk = model.hm.load_state_dict(torch.load(opt.load_metamodel)['state_dict'], strict=False)
+    l = torch.load(opt.load_metamodel)['state_dict']
+    mk,uk = model.hm.load_state_dict(l, strict=False)
     print('Missing Keys for meta model:    ',mk)
     print('')
     print('Unknown Keys for meta model:    ',uk)
