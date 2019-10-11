@@ -239,6 +239,11 @@ class PoseMetaResNet(nn.Module):
         return x
 
     def forward_multi_class(self, x, y_codes):
+        """
+            x: batch of images
+            y_codes: list of per-category y_code 
+        """
+
         x = self.extract_features(x)
         ret = {}
         for head in self.heads:
@@ -350,8 +355,8 @@ class MetaNet(nn.Module):
 
 
     def forward(self, y, x):
-        y = self.extract_support_code(y)
-        o = self.apply_code(x, y)
+        y = self.extract_support_code(y) #for batch of support sets
+        o = self.apply_code(x, y)        #each corresponding image x_i to y_i
         return o
 
     def apply_code(self, x, y_code):
