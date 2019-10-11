@@ -66,7 +66,6 @@ def main(opt):
   if opt.load_basemodel:
     print('=====> Loading pretrained models')
     l = torch.load(opt.load_basemodel)['state_dict']
-    print(l)
     mk,uk = model.load_state_dict(l, strict=False)
     print('Missing Keys for base model:    ',mk)
     print('')
