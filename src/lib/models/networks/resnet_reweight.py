@@ -315,13 +315,6 @@ class MetaNet(nn.Module):
         self.feat_dim = feat_dim
         self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=7, stride=2, padding=2,
                                bias=False)
-        #self.bn1 = nn.BatchNorm2d(self.inplanes, momentum=BN_MOMENTUM)
-        #self.relu = nn.ReLU(inplace=True)
-        #self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        #self.layer1 = self._make_layer(block,   self.inplanes, layers[0], stride=2)
-        #self.layer2 = self._make_layer(block, 2*self.inplanes, layers[1], stride=2)
-        #self.conv_o = nn.Conv2d(self.inplanes, 256*out_channels, kernel_size=1, stride=1, padding=0,
-        #                       bias=False)
 
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)

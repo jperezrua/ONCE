@@ -133,7 +133,7 @@ class EpisodicDetDataset(data.Dataset):
       if h > 0 and w > 0:
         radius = gaussian_radius((math.ceil(h), math.ceil(w)))
         radius = max(0, int(radius))
-        radius = self.opt.hm_gauss if self.opt.mse_loss else radius
+        radius = radius+0.1#self.opt.hm_gauss if self.opt.mse_loss else radius
         ct = np.array(
           [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], dtype=np.float32)
         ct_int = ct.astype(np.int32)
