@@ -105,14 +105,14 @@ class Bottleneck(nn.Module):
         return out
 
 
-class PoseMetaResNet(nn.Module):
+class PoseMSMetaResNet(nn.Module):
 
     def __init__(self, block, layers, heads, head_conv, **kwargs):
         self.inplanes = 64
         self.deconv_with_bias = False
         self.heads = heads
 
-        super(PoseMetaResNet, self).__init__()
+        super(PoseMSMetaResNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
@@ -123,13 +123,21 @@ class PoseMetaResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-        # used for deconv layers
-        self.deconv_layers = self._make_deconv_layer(
-            3,
-            [256, 256, 256],
-            [4, 4, 4],
-        )
+        # deconv layers
+        self.deconv_layer_3 = self._make_deconv_layer(2, 256, [128,128], [4,4])
+        self.deconv_layer_4 = self._make_deconv_layer(3, 512, [128,128,128], [4,4,4])
 
+        # post-cnn
+        self.post_cnn = nn.Sequential(
+                nn.Conv2d(256, 256, kernel_size=3, bias=False, padding=1),
+                nn.BatchNorm2d(256, momentum=BN_MOMENTUM),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(256, 256, kernel_size=3, bias=False, padding=1),
+                nn.BatchNorm2d(256, momentum=BN_MOMENTUM),
+                nn.ReLU(inplace=True),
+            )
+
+        # reweight 
         block_meta, layers_meta = resnet_spec[18]
         reweight_layer = MetaNet(
             block_meta, layers_meta,
@@ -141,20 +149,30 @@ class PoseMetaResNet(nn.Module):
             padding=0
         )
 
-        for head in sorted(self.heads):
-          num_output = self.heads[head]
-          if head == 'hm':
-            fc = reweight_layer
-          else:
-            fc = nn.Conv2d(
-              in_channels=256,
-              out_channels=num_output,
-              kernel_size=1,
-              stride=1,
-              padding=0
-          )
-          self.meta_params = reweight_layer.parameters()
-          self.__setattr__(head, fc)       
+        self.wh = nn.Conv2d(
+            in_channels=256,
+            out_channels=self.heads['wh'],
+            kernel_size=1,
+            stride=1,
+            padding=0
+        )
+
+        self.reg = nn.Conv2d(
+            in_channels=256,
+            out_channels=self.heads['reg'],
+            kernel_size=1,
+            stride=1,
+            padding=0
+        )
+
+        self.hm = reweight_layer
+
+        self.meta_params = list(self.hm.parameters()) + \
+                           list(self.wh.parameters()) + \
+                           list(self.reg.parameters()) + \
+                           list(self.post_cnn.parameters()) + \
+                           list(self.deconv_layer_3.parameters()) + \
+                           list(self.deconv_layer_4.parameters())
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -186,21 +204,21 @@ class PoseMetaResNet(nn.Module):
 
         return deconv_kernel, padding, output_padding
 
-    def _make_deconv_layer(self, num_layers, num_filters, num_kernels):
+    def _make_deconv_layer(self, num_layers, inplanes, num_filters, num_kernels):
         assert num_layers == len(num_filters), \
             'ERROR: num_deconv_layers is different len(num_deconv_filters)'
         assert num_layers == len(num_kernels), \
             'ERROR: num_deconv_layers is different len(num_deconv_filters)'
 
         layers = []
+        inplanes_ = inplanes
         for i in range(num_layers):
             kernel, padding, output_padding = \
                 self._get_deconv_cfg(num_kernels[i], i)
-
             planes = num_filters[i]
             layers.append(
                 nn.ConvTranspose2d(
-                    in_channels=self.inplanes,
+                    in_channels=inplanes_,
                     out_channels=planes,
                     kernel_size=kernel,
                     stride=2,
@@ -209,18 +227,17 @@ class PoseMetaResNet(nn.Module):
                     bias=self.deconv_with_bias))
             layers.append(nn.BatchNorm2d(planes, momentum=BN_MOMENTUM))
             layers.append(nn.ReLU(inplace=True))
-            self.inplanes = planes
+            inplanes_ = planes
 
         return nn.Sequential(*layers)
 
     def forward(self, x, y):
-        x = self.extract_features(x)
+        x   = self.extract_features(x)
         ret = {}
-        for head in self.heads:
-            if head=='hm':
-                ret[head] = self.__getattr__(head)(y,x)
-            else:
-                ret[head] = self.__getattr__(head)(x)
+        ret['hm']  = self.hm(y,x)
+        ret['wh']  = self.wh(x)
+        ret['reg'] = self.reg(x)
+
         return [ret]
 
     def extract_features(self,x):
@@ -229,12 +246,17 @@ class PoseMetaResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        x1 = self.layer1(x)
+        x2 = self.layer2(x1)
+        x3 = self.layer3(x2)
+        x4 = self.layer4(x3)
 
-        x = self.deconv_layers(x)
+        x3 = self.deconv_layer_3(x3)
+        x4 = self.deconv_layer_4(x4)
+
+        x = torch.cat((x3,x4), dim=1)
+        x = self.post_cnn(x)
+
         return x
 
     def forward_multi_class(self, x, y_codes):
@@ -245,14 +267,12 @@ class PoseMetaResNet(nn.Module):
 
         x = self.extract_features(x)
         ret = {}
-        for head in self.heads:
-            if head=='hm':
-                ret[head] = []
-                for y_code in y_codes:
-                    ret[head].append( self.__getattr__(head).apply_code(x, y_code) )
-                ret[head] = torch.cat(ret[head],dim=1)
-            else:
-                ret[head] = self.__getattr__(head)(x)
+        ret['hm']  = []
+        for y_code in y_codes:
+            ret['hm'].append( self.hm.apply_code(x, y_code) )
+        ret['hm']  = torch.cat(ret['hm'],dim=1)
+        ret['wh']  = self.wh(x)
+        ret['reg'] = self.reg(x)
 
         return [ret]
 
@@ -263,7 +283,7 @@ class PoseMetaResNet(nn.Module):
     def init_weights(self, num_layers, pretrained=True):
         if pretrained:
             print('BASE => init resnet deconv weights from normal distribution')
-            for _, m in self.deconv_layers.named_modules():
+            for _, m in self.deconv_layer_3.named_modules():
                 if isinstance(m, nn.ConvTranspose2d):
                     # print('=> init {}.weight as normal(0, 0.001)'.format(name))
                     # print('=> init {}.bias as 0'.format(name))
@@ -275,20 +295,68 @@ class PoseMetaResNet(nn.Module):
                     # print('=> init {}.bias as 0'.format(name))
                     nn.init.constant_(m.weight, 1)
                     nn.init.constant_(m.bias, 0)
+            for _, m in self.deconv_layer_4.named_modules():
+                if isinstance(m, nn.ConvTranspose2d):
+                    # print('=> init {}.weight as normal(0, 0.001)'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.normal_(m.weight, std=0.001)
+                    if self.deconv_with_bias:
+                        nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.BatchNorm2d):
+                    # print('=> init {}.weight as 1'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+            for _, m in self.post_cnn.named_modules():
+                if isinstance(m, nn.Conv2d):
+                    # print('=> init {}.weight as normal(0, 0.001)'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.normal_(m.weight, std=0.001)
+                    if self.deconv_with_bias:
+                        nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.BatchNorm2d):
+                    # print('=> init {}.weight as 1'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
+            for _, m in self.wh.named_modules():
+                if isinstance(m, nn.Conv2d):
+                    # print('=> init {}.weight as normal(0, 0.001)'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.normal_(m.weight, std=0.001)
+                    if self.deconv_with_bias:
+                        nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.BatchNorm2d):
+                    # print('=> init {}.weight as 1'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0) 
+            for _, m in self.reg.named_modules():
+                if isinstance(m, nn.Conv2d):
+                    # print('=> init {}.weight as normal(0, 0.001)'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.normal_(m.weight, std=0.001)
+                    if self.deconv_with_bias:
+                        nn.init.constant_(m.bias, 0)
+                elif isinstance(m, nn.BatchNorm2d):
+                    # print('=> init {}.weight as 1'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)                                                                           
             print('BASE => init final conv weights from normal distribution')
             for head in self.heads:
-              final_layer = self.__getattr__(head)
-              for i, m in enumerate(final_layer.modules()):
-                  if isinstance(m, nn.Conv2d):
-                      # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                      # print('=> init {}.weight as normal(0, 0.001)'.format(name))
-                      # print('=> init {}.bias as 0'.format(name))
-                      if m.weight.shape[0] == self.heads[head]:
-                          if 'hm' in head:
-                              nn.init.constant_(m.bias, -2.19)
-                          else:
-                              nn.init.normal_(m.weight, std=0.001)
-                              nn.init.constant_(m.bias, 0)
+                if 'hm' in head:
+                    continue
+                final_layer = self.__getattr__(head)
+
+                for i, m in enumerate(final_layer.modules()):
+                    if isinstance(m, nn.Conv2d):
+                    # nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                    # print('=> init {}.weight as normal(0, 0.001)'.format(name))
+                    # print('=> init {}.bias as 0'.format(name))
+                        if m.weight.shape[0] == self.heads[head]:
+                            nn.init.normal_(m.weight, std=0.001)
+                            nn.init.constant_(m.bias, 0)
             #pretrained_state_dict = torch.load(pretrained)
             url = model_urls['resnet{}'.format(num_layers)]
             pretrained_state_dict = model_zoo.load_url(url)
@@ -412,6 +480,6 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
 def get_pose_net(num_layers, heads, head_conv):
   block_class, layers = resnet_spec[num_layers]
 
-  model = PoseMetaResNet(block_class, layers, heads, head_conv=head_conv)
+  model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv)
   model.init_weights(num_layers, pretrained=True)
   return model
