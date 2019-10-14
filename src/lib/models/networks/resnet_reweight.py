@@ -153,8 +153,11 @@ class PoseMetaResNet(nn.Module):
               stride=1,
               padding=0
           )
-          self.meta_params = reweight_layer.parameters()
           self.__setattr__(head, fc)       
+
+        self.meta_params = list(self.hm.parameters()) + \
+                           list(self.wh.parameters()) + \
+                           list(self.reg.parameters())
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
