@@ -233,6 +233,7 @@ class opts(object):
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
     self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')
+    self.parser.add_argument('--learnable', type=str, default='', help=' postfeature or all or empty')
 
   def parse(self, args=''):
     if args == '':

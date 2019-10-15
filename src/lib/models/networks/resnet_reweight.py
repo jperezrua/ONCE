@@ -155,9 +155,31 @@ class PoseMetaResNet(nn.Module):
           )
           self.__setattr__(head, fc)       
 
-        self.meta_params = list(self.hm.parameters()) + \
-                           list(self.wh.parameters()) + \
-                           list(self.reg.parameters())
+        if 'learnable' in kwargs:
+            if kwargs['learnable'] == 'all':
+                self.meta_params = list(self.hm.parameters()) + \
+                                list(self.wh.parameters()) + \
+                                list(self.reg.parameters()) + \
+                                list(self.deconv_layers.parameters()) + \
+                                list(self.layer1.parameters()) + \
+                                list(self.layer2.parameters()) + \
+                                list(self.layer3.parameters()) + \
+                                list(self.layer4.parameters()) + \
+                                list(self.conv1.parameters())
+            if kwargs['learnable'] == 'postfeature':
+                self.meta_params = list(self.hm.parameters()) + \
+                                list(self.wh.parameters()) + \
+                                list(self.reg.parameters()) + \
+                                list(self.deconv_layers.parameters())
+            if kwargs['learnable'] == '':
+                self.meta_params = list(self.hm.parameters()) + \
+                                list(self.wh.parameters()) + \
+                                list(self.reg.parameters())
+
+        else:
+            self.meta_params = list(self.hm.parameters()) + \
+                            list(self.wh.parameters()) + \
+                            list(self.reg.parameters())
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
