@@ -173,9 +173,9 @@ class PoseMSMetaResNet(nn.Module):
                            list(self.post_cnn.parameters()) + \
                            list(self.deconv_layer_3.parameters()) + \
                            list(self.deconv_layer_4.parameters())
-
-    def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None
+, learnable
+    def _make_layer(self, block, planes, blocks, stride=1), learnable:
+        downsample = None, learnable
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
@@ -477,7 +477,7 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_pose_net(num_layers, heads, head_conv):
+def get_pose_net(num_layers, heads, head_conv, learnable):
   block_class, layers = resnet_spec[num_layers]
 
   model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv)

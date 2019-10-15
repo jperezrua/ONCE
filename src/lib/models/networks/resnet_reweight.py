@@ -434,9 +434,9 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_pose_net(num_layers, heads, head_conv):
+def get_pose_net(num_layers, heads, head_conv, learnable):
   block_class, layers = resnet_spec[num_layers]
 
-  model = PoseMetaResNet(block_class, layers, heads, head_conv=head_conv)
+  model = PoseMetaResNet(block_class, layers, heads, head_conv=head_conv, learnable=learnable)
   model.init_weights(num_layers, pretrained=True)
   return model
