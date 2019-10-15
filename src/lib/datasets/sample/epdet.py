@@ -172,7 +172,7 @@ class EpisodicDetDataset(data.Dataset):
   def __getitem__(self, index):
 
     if self.is_train:
-      index_ = random.randint(0,self.num_samples)
+      index_ = random.randint(0,self.num_samples-1)
     else:
       index_ = index
 
