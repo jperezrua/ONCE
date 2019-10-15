@@ -169,7 +169,7 @@ class COCOEpisodic(data.Dataset):
     if not self.is_train:
       return self.num_samples
     else:
-      return 1000 # 1000 randomly sampled episodes
+      return 2500 # randomly sampled episodes
 
   def save_results(self, results, save_dir):
     json.dump(self.convert_eval_format(results), 
