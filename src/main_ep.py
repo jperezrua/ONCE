@@ -84,12 +84,12 @@ def main(opt):
   for epoch in range(start_epoch + 1, opt.num_epochs + 1):
 
     # hardcoded warmpup
-    if epoch == 0:
-      lr = opt.lr/1000
-      print('**** Warmup LR to', lr, opt.lr)
+    if epoch == 1:
+      lr = opt.lr/100
+      print('**** Warmup LR to', lr)
       for param_group in optimizer.param_groups:
           param_group['lr'] = lr
-    elif epoch == 1:
+    elif epoch == 2:
       lr = opt.lr
       print('**** Warmup finished to', lr)
       for param_group in optimizer.param_groups:
