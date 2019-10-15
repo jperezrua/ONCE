@@ -175,7 +175,7 @@ class PoseMSMetaResNet(nn.Module):
                            list(self.deconv_layer_4.parameters())
 
     def _make_layer(self, block, planes, blocks, stride=1):
-        downsample = None, learnable
+        downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
