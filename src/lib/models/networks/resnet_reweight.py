@@ -165,7 +165,9 @@ class PoseMetaResNet(nn.Module):
                                 list(self.layer2.parameters()) + \
                                 list(self.layer3.parameters()) + \
                                 list(self.layer4.parameters()) + \
-                                list(self.conv1.parameters())
+                                list(self.conv1.parameters()) + \
+                                list(self.bn11.parameters())
+                                
             if kwargs['learnable'] == 'postfeature':
                 self.meta_params = list(self.hm.parameters()) + \
                                 list(self.wh.parameters()) + \

@@ -17,6 +17,8 @@ python test.py ctdet --exp_id coco_res101_nohc --arch res_101 --keep_res --resum
 ################ COCO BASE RES-18
 python main.py ctdet --exp_id coco_base_res18_nohc --arch res_18 --batch_size 114 --master_batch 18 --lr 5e-4 --gpus 0,1,2,3 --num_workers 16 --dataset coco_base --head_conv 0
 
+python main.py ctdet --exp_id coco_base_res18_nohc --arch res_18 --batch_size 114 --master_batch 18 --lr 5e-4 --gpus 0,1,2,3 --num_workers 16 --dataset coco_base --head_conv 0 --num_epochs 5
+
 ################ COCO BASE RES-50
 python main.py ctdet --exp_id coco_base_res50_nohc --arch res_50 --batch_size 80 --master_batch 5 --lr 3.75e-4 --gpus 0,1,2,3,4,5,6,7 --num_workers 16 --dataset coco_base --head_conv 0
 
