@@ -173,7 +173,7 @@ class PoseMSMetaResNet(nn.Module):
                            list(self.post_cnn.parameters()) + \
                            list(self.deconv_layer_3.parameters()) + \
                            list(self.deconv_layer_4.parameters())
-, learnable
+
     def _make_layer(self, block, planes, blocks, stride=1), learnable:
         downsample = None, learnable
         if stride != 1 or self.inplanes != planes * block.expansion:
