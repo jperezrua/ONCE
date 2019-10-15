@@ -134,7 +134,7 @@ class Debugger(object):
     
   '''
   # slow
-  def gen_colormap_hp(self, img, output_res=None):
+  def gen_colormap_hp(self, img, outpu elif num_classes == 1 or dataset == 'coco_ep':t_res=None):
     # num_classes = len(self.colors)
     # img[img < 0] = 0
     h, w = img.shape[1], img.shape[2]

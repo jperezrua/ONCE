@@ -110,8 +110,8 @@ def prefetch_test(opt):
   Logger(opt)
     
   split = 'val'# if not opt.trainval else 'test'
-  dataset = Dataset(opt, split, base=False)
-  #dataset = Dataset(opt, split, base=True)
+  #dataset = Dataset(opt, split, base=False)
+  dataset = Dataset(opt, split, base=True)
   opt.num_classes = dataset.num_classes
   Detector = detector_factory[opt.task]
   detector = Detector(opt)
