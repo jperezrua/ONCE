@@ -35,6 +35,8 @@ class COCOEpisodic(data.Dataset):
     print(100*'*')
     print(self.img_dir, split)
 
+    self.is_train = base
+
     if opt.task == 'epdet':
       if base:
         # if 'base' we will use the instances_base_train2017.json file for
@@ -164,7 +166,10 @@ class COCOEpisodic(data.Dataset):
     return detections
 
   def __len__(self):
-    return self.num_samples
+    if not self.is_train:
+      return self.num_samples
+    else:
+      return 1000 # 1000 randomly sampled episodes
 
   def save_results(self, results, save_dir):
     json.dump(self.convert_eval_format(results), 

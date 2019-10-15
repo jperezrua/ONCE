@@ -171,8 +171,13 @@ class EpisodicDetDataset(data.Dataset):
 
   def __getitem__(self, index):
 
+    if self.is_train:
+      index_ = random.randint(0,self.num_samples)
+    else:
+      index_ = index
+
     # 1. Extract the query image and get annotation for a single category
-    query_path, query_anns, query_cat, query_id = self._sample_query(index)
+    query_path, query_anns, query_cat, query_id = self._sample_query(index_)
     query_img = cv2.imread(query_path)
     num_objs  = min(len(query_anns), self.max_objs)
 
