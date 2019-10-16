@@ -40,6 +40,15 @@ class EpdetDetector(EpBaseDetector):
       output  = self.model.forward_multi_class(images, y_codes_)[-1]
 
       hm = output['hm'].sigmoid_()
+
+      #yescats=[1]#list(range(20))
+      yescats=list(range(20))
+      for c in range(20):
+        if not c in yescats:
+          hm[:,c,:,:] *= 0
+      
+      
+
       wh = output['wh']
       reg = output['reg'] if self.opt.reg_offset else None
       if self.opt.flip_test:

@@ -10,6 +10,8 @@ import os
 from .networks.msra_resnet import get_pose_net
 from .networks.resnet_reweight import get_pose_net as get_pose_metanet
 from .networks.resnet_reweight_ms import get_pose_net as get_pose_metamsnet
+from .networks.resnet_reweight_ms_wh import get_pose_net as get_pose_meta
+
 #from .networks.dlav0 import get_pose_net as get_dlav0
 #from .networks.pose_dla_dcn import get_pose_net as get_dla_dcn
 #from .networks.resnet_dcn import get_pose_net as get_pose_net_dcn
@@ -18,7 +20,8 @@ from .networks.resnet_reweight_ms import get_pose_net as get_pose_metamsnet
 _model_factory = {
   'res':   get_pose_net, # default Resnet with deconv
   'resrw': get_pose_metanet, # 
-  'resmsrw': get_pose_metamsnet
+  'resmsrw': get_pose_metamsnet,
+  'resmeta': get_pose_meta
 }
 
 def create_model(arch, heads, head_conv, extras=None):
