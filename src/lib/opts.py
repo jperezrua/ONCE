@@ -110,7 +110,7 @@ class opts(object):
                              help='multi scale test augmentation.')
     self.parser.add_argument('--nms', action='store_true',
                              help='run nms in testing.')
-    self.parser.add_argument('--K', type=int, default=25,
+    self.parser.add_argument('--K', type=int, default=100,
                              help='max number of output objects.') 
     self.parser.add_argument('--not_prefetch_test', action='store_true',
                              help='not use parallal data pre-processing.')
@@ -230,6 +230,7 @@ class opts(object):
                              help='use ground truth depth.')
     # meta
     self.parser.add_argument('--k_shots', type=int, default=5)
+    self.parser.add_argument('--n_class', type=int, default=3)
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
     self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')

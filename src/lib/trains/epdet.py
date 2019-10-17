@@ -40,6 +40,7 @@ class EpdetLoss(torch.nn.Module):
           batch['wh'].detach().cpu().numpy(), 
           batch['ind'].detach().cpu().numpy(), 
           output['wh'].shape[3], output['wh'].shape[2])).to(opt.device)
+
       if opt.eval_oracle_offset:
         output['reg'] = torch.from_numpy(gen_oracle_map(
           batch['reg'].detach().cpu().numpy(), 
@@ -60,6 +61,7 @@ class EpdetLoss(torch.nn.Module):
             output['wh'], batch['cat_spec_mask'],
             batch['ind'], batch['cat_spec_wh']) / opt.num_stacks
         else:
+          #print(' wh =============> ',output['wh'].shape, batch['wh'].shape)
           wh_loss += self.crit_reg(
             output['wh'], batch['reg_mask'],
             batch['ind'], batch['wh']) / opt.num_stacks

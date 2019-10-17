@@ -28,7 +28,13 @@ class COCOEpisodic(data.Dataset):
     else:
       self.num_classes = 20
 
+    self.n_sample_classes = opt.n_class
+
+    if self.base:
+      assert not opt.keep_res
+
     print('COCOEpisodic with {} classes'.format(self.num_classes))
+    
 
     self.data_dir = os.path.join(opt.data_dir, 'coco')
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
@@ -132,7 +138,7 @@ class COCOEpisodic(data.Dataset):
     self.coco_support = coco.COCO(self.annot_supp_path)
     
     self.query_images = self.coco.getImgIds()
-    #self.support_per_cat = {cat:self.coco_support.getImgIds(catIds=cat) for cat in self._valid_ids}
+    #self.images_per_cat = {cat:self.coco_support.getImgIds(catIds=cat) for cat in self._valid_ids}
 
     self.num_samples = len(self.query_images)
 
@@ -169,7 +175,7 @@ class COCOEpisodic(data.Dataset):
     if not self.is_train:
       return self.num_samples
     else:
-      return min(self.num_samples, 100000) # randomly sampled episodes
+      return min(self.num_samples, 10000) # randomly sampled episodes
 
   def save_results(self, results, save_dir):
     json.dump(self.convert_eval_format(results), 
