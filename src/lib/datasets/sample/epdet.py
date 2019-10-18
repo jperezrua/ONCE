@@ -50,17 +50,6 @@ class EpisodicDetDataset(data.Dataset):
 
     return query_img_paths, anns_per_query, category_dict
 
-  def _sample_query(self, index):
-    query_id  = self.query_images[index]
-    file_name = self.coco.loadImgs(ids=[query_id])[0]['file_name']
-    img_path  = os.path.join(self.img_dir, file_name)
-    ann_ids   = self.coco.getAnnIds(imgIds=[query_id])
-    anns      = self.coco.loadAnns(ids=ann_ids)
-    cats_anns = np.unique([a['category_id'] for a in anns])
-    query_cat = np.random.choice(cats_anns)
-    query_anns= [a for a in anns if a['category_id']==query_cat]
-    return img_path, query_anns, query_cat, query_id
-
   def _sample_support_set(self, cat_id):
     img_ids    = np.random.choice(self.coco_support.getImgIds(catIds=[cat_id]), self.k_shots).tolist()
     img_items  = self.coco_support.loadImgs(ids=img_ids)
@@ -115,7 +104,7 @@ class EpisodicDetDataset(data.Dataset):
                          (input_w, input_h),
                          flags=cv2.INTER_LINEAR)
 
-    cv2.imshow('inp-{}'.format(cat),inp)
+    #cv2.imshow('inp-{}'.format(cat),inp)
 
     inp = (inp.astype(np.float32) / 255.)
     if augment and not self.opt.no_color_aug:
@@ -185,9 +174,9 @@ class EpisodicDetDataset(data.Dataset):
           gt_det.append([ct[0] - w / 2, ct[1] - h / 2, 
                         ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
 
-      cv2.imshow( 'hm-query-{}-cat-{}'.format(query_idx,0), cv2.resize(hm[0], tuple(img.shape[1:3])) )
-      cv2.imshow( 'hm-query-{}-cat-{}'.format(query_idx,1), cv2.resize(hm[1], tuple(img.shape[1:3])) )
-      cv2.imshow( 'hm-query-{}-cat-{}'.format(query_idx,2), cv2.resize(hm[2], tuple(img.shape[1:3])) )
+      #cv2.imshow( 'hm-query-{}-cat-{}'.format(query_idx,0), cv2.resize(hm[0], tuple(img.shape[1:3])) )
+      #cv2.imshow( 'hm-query-{}-cat-{}'.format(query_idx,1), cv2.resize(hm[1], tuple(img.shape[1:3])) )
+      #cv2.imshow( 'hm-query-{}-cat-{}'.format(query_idx,2), cv2.resize(hm[2], tuple(img.shape[1:3])) )
       hm_per_query.append(hm)
       reg_mask_per_query.append(reg_mask)
       reg_per_query.append(reg)
@@ -209,13 +198,20 @@ class EpisodicDetDataset(data.Dataset):
     for i, (img, ann) in enumerate(zip(support_imgs, support_anns)):
       bbox = self._coco_box_to_bbox(ann['bbox'])
       x1,y1,x2,y2 = math.floor(bbox[0]), math.floor(bbox[1]), math.ceil(bbox[2]), math.ceil(bbox[3])
+      
+      #give a little more of context for support
+      y1 = max(0, y1-self.opt.supp_ctxt)
+      x1 = max(0, x1-self.opt.supp_ctxt)
+      y2 = min(y2+self.opt.supp_ctxt, img.shape[0])
+      x2 = min(x2+self.opt.supp_ctxt, img.shape[1])
+
       inp = img[y1:y2,x1:x2,:]
 
       if augment:
         if np.random.random() < self.opt.flip:
           inp = inp[:, ::-1, :]
 
-      cv2.imshow('sample-{}-cat-{}'.format(i,cat), inp)
+      #cv2.imshow('sample-{}-cat-{}'.format(i,cat), inp)
 
       inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
       inp = (inp.astype(np.float32) / 255.)
@@ -267,7 +263,7 @@ class EpisodicDetDataset(data.Dataset):
     # 6. stack all together to be size [N,...]
     query_imgs = np.stack(query_imgs, axis=0)
     
-    cv2.waitKey(0)
+    #cv2.waitKey(0)
     print(query_imgs.shape, hm.shape, wh.shape, support_set.shape,'**************')
 
     ret = {'input': query_imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': support_set}
