@@ -222,15 +222,15 @@ class PoseMSMetaResNet(nn.Module):
         C = x.size(1)
         x = x.view(-1, x.size(2), x.size(3), x.size(4))
         x = self.extract_features(x)
+        x = x.view(B, C, x.size(1), x.size(2), x.size(3))
         print('x feature size: ',x.shape)
         ret = {}
-        y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         rw  = self.rw(y,x)
-        print('rw size: ', rw.shape)
+        #print('rw size: ', rw.shape)
         ret['hm']  = rw[:,:self.heads['hm'],:,:]
-        print('hm size: ', ret['hm'].shape)
+        #print('hm size: ', ret['hm'].shape)
         ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
-        print('wh size: ', ret['wh'].shape)
+        #print('wh size: ', ret['wh'].shape)
         ret['reg'] = self.reg(x)
 
         return [ret]
@@ -398,7 +398,11 @@ class MetaNet(nn.Module):
 
 
     def forward(self, y, x):
+        B = x.size(0)
+        C = x.size(1)        
+        y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         y = self.extract_support_code(y) #for batch of support sets
+        print('RM y.size = ',y.shape)
         o = self.apply_code(x, y)        #each corresponding image x_i to y_i
         return o
 
