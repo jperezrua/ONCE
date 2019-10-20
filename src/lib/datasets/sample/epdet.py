@@ -259,7 +259,7 @@ class EpisodicDetDataset(data.Dataset):
     support_set = np.stack(support_set,axis=0)
 
     # 5. Process query gt output
-    hm, reg_mask, reg, ind, wh, gt_det = self._process_all_query_outs(query_imgs, anns_per_query, query_info, category_dict)
+    hm, reg_mask, reg, ind, wh, gt_det, cs_wh_per_query = self._process_all_query_outs(query_imgs, anns_per_query, query_info, category_dict)
     
 
     # 6. stack all together to be size [N,...]
