@@ -32,7 +32,7 @@ class ModelWithLoss(torch.nn.Module):
 
     outputs[0]['hm'] = outputs[0]['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
     outputs[0]['wh'] = outputs[0]['wh'].view(B*C,whsize[2],whsize[3],whsize[4]).contiguous()
-    outputs[0]['wh'] = torch.mean(outputs[0]['wh'], dim=1)
+    outputs[0]['wh'] = outputs[0]['wh'][:,0:2,:,:]
     outputs[0]['reg'] = outputs[0]['reg'].view(B*C,regsize[2],regsize[3],regsize[4]).contiguous()
 
     batch['hm'] = batch['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
