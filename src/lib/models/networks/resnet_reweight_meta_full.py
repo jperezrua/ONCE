@@ -223,21 +223,20 @@ class PoseMSMetaResNet(nn.Module):
         x = x.view(-1, x.size(2), x.size(3), x.size(4))
         x = self.extract_features(x)
         x = x.view(B, C, x.size(1), x.size(2), x.size(3))
-        ret = []
+        ret = {'hm': [], 'wh': [], 'reg': []}
         rw  = self.rw(y,x)
 
 
         for i in range(C):
-            ret_i = {}
-            ret_i['hm']  = rw[:,C*i:C*(i+1),:self.heads['hm'],:,:]
-            ret_i['wh']  = rw[:,C*i:C*(i+1), self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
-            ret_i['reg'] = self.reg(x[:,i,:,:,:])
-            ret.append(ret_i)
+            ret['hm'].append( rw[:,C*i:C*(i+1),:self.heads['hm'],:,:] )
+            ret['wh'].append( rw[:,C*i:C*(i+1), self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:] )
+            ret['reg'].append( self.reg(x[:,i,:,:,:]) )
 
-            print('hm {} size: '.format(i), ret_i['hm'].shape)
-            print('wh {} size: '.format(i), ret_i['wh'].shape)
-            print('reg {} size: '.format(i), ret_i['reg'].shape)
 
+        ret['hm'] = torch.cat(ret['hm'], dim=2)
+        ret['wh'] = torch.cat(ret['wh'], dim=2)
+        ret['reg'] = torch.cat(ret['reg'], dim=2)
+           
         return ret
 
     def extract_features(self,x):
