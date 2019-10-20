@@ -226,6 +226,7 @@ class PoseMSMetaResNet(nn.Module):
         print('x feature size: ',x.shape)
         ret = {}
         rw  = self.rw(y,x)
+        print('rw feature size: ',rw.shape)
         #print('rw size: ', rw.shape)
         ret['hm']  = rw[:,:self.heads['hm'],:,:]
         #print('hm size: ', ret['hm'].shape)
@@ -403,9 +404,7 @@ class MetaNet(nn.Module):
         y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         y = self.extract_support_code(y) #for batch of support sets
         y = y.view(B, C, y.size(1))
-        print('RM y.size = ',y.shape)
         o = self.apply_code(x, y)        #each corresponding image x_i to y_i
-        print('code size: ', o.shape)
         return o
 
     def apply_code(self, x, y_code):
@@ -419,8 +418,8 @@ class MetaNet(nn.Module):
                             y_code[:,yi,:].contiguous().view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
                             bias=None
                         )
-            out = out.view(batch_size, self.out_ch, out.size(2), out.size(3))
-            outs.append(out)
+                out = out.view(batch_size, self.out_ch, out.size(2), out.size(3))
+                outs.append(out)
         outs = torch.stack(outs)
         return outs
 
