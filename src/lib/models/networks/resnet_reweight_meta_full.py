@@ -223,18 +223,22 @@ class PoseMSMetaResNet(nn.Module):
         x = x.view(-1, x.size(2), x.size(3), x.size(4))
         x = self.extract_features(x)
         x = x.view(B, C, x.size(1), x.size(2), x.size(3))
-        print('x feature size: ',x.shape)
-        ret = {}
+        ret = []
         rw  = self.rw(y,x)
-        print('rw feature size: ',rw.shape)
-        #print('rw size: ', rw.shape)
-        ret['hm']  = rw[:,:self.heads['hm'],:,:]
-        #print('hm size: ', ret['hm'].shape)
-        ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
-        #print('wh size: ', ret['wh'].shape)
-        ret['reg'] = self.reg(x)
 
-        return [ret]
+
+        for i in range(C):
+            ret_i = {}
+            ret_i['hm']  = rw[:,C*i:C*(i+1),:self.heads['hm'],:,:]
+            ret_i['wh']  = rw[:,C*i:C*(i+1), self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
+            ret_i['reg'] = self.reg(x[:,i,:,:,:])
+            ret.append(ret_i)
+
+            print('hm {} size: '.format(i), ret_i['hm'].shape)
+            print('wh {} size: '.format(i), ret_i['wh'].shape)
+            print('reg {} size: '.format(i), ret_i['reg'].shape)
+
+        return ret
 
     def extract_features(self,x):
         x = self.conv1(x)
@@ -420,7 +424,7 @@ class MetaNet(nn.Module):
                         )
                 out = out.view(batch_size, self.out_ch, out.size(2), out.size(3))
                 outs.append(out)
-        outs = torch.stack(outs)
+        outs = torch.stack(outs, dim=1)
         return outs
 
     def extract_support_code(self, y):
