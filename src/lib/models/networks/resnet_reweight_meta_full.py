@@ -413,7 +413,7 @@ class MetaNet(nn.Module):
 
         outs = []
         for xi in range(x.size(1)):
-            for yi in range(y.size(1)):
+            for yi in range(y_code.size(1)):
                 out = torch.nn.functional.conv2d(
                             x[:,xi,:,:,:].view(1, batch_size*self.feat_dim, x.size(3), x.size(4)),
                             y_code[:,yi,:].view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
