@@ -28,7 +28,10 @@ class COCOEpisodic(data.Dataset):
     else:
       self.num_classes = 20
 
-    self.n_sample_classes = opt.n_class
+    if split == 'train':
+      self.n_sample_classes = opt.n_class
+    else:
+      self.n_sample_classes = 1
 
     if self.base:
       assert not opt.keep_res

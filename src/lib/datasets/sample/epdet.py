@@ -273,7 +273,7 @@ class EpisodicDetDataset(data.Dataset):
     if self.opt.reg_offset:
       ret.update({'reg': reg})
     if self.opt.debug > 0 or not self.split == 'train':
-      gt_det = np.array(gt_det, dtype=np.float32) if len(gt_det) > 0 else \
+      gt_det = np.array(gt_det[0], dtype=np.float32) if len(gt_det[0]) > 0 else \
                np.zeros((1, 6), dtype=np.float32)
       #meta = {'c': center, 's': scale, 'gt_det': gt_det, 'img_id': query_id}
       meta = {'c': center, 's': scale, 'gt_det': gt_det}
