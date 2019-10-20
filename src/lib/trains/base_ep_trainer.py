@@ -40,7 +40,7 @@ class ModelWithLoss(torch.nn.Module):
     batch['wh'] = batch['wh'].view(B*C,-1,2).contiguous()
     batch['ind'] = batch['ind'].view(B*C,-1).contiguous()
     batch['reg_mask'] = batch['reg_mask'].view(B*C,-1).contiguous()
-    batch['reg'] = batch['reg'].view(B*C,regsize[2],regsize[3],regsize[4]).contiguous()
+    batch['reg'] = batch['reg'].view(B*C,-1,2).contiguous()
 
 
     loss, loss_stats = self.loss(outputs, batch)
