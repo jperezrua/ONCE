@@ -61,7 +61,8 @@ class EpdetLoss(torch.nn.Module):
             output['wh'], batch['cat_spec_mask'],
             batch['ind'], batch['cat_spec_wh']) / opt.num_stacks
         else:
-          #print(' wh =============> ',output['wh'].shape, batch['wh'].shape)
+          print(' wh =============> ',output['wh'].shape, batch['wh'].shape)
+          print(' ind =============> ', batch['ind'].shape)
           wh_loss += self.crit_reg(
             output['wh'], batch['reg_mask'],
             batch['ind'], batch['wh']) / opt.num_stacks
