@@ -228,9 +228,9 @@ class PoseMSMetaResNet(nn.Module):
         rw  = self.rw(y,x)
         print('rw size: ', rw.shape)
         ret['hm']  = rw[:,:self.heads['hm'],:,:]
-        print('hm size: ', hm.shape)
+        print('hm size: ', ret['hm'].shape)
         ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
-        print('wh size: ', wh.shape)
+        print('wh size: ', ret['wh'].shape)
         ret['reg'] = self.reg(x)
 
         return [ret]
