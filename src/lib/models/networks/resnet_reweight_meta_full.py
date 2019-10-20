@@ -421,7 +421,7 @@ class MetaNet(nn.Module):
                         )
             out = out.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
             outs.append(out)
-            outs = torch.stack(outs)
+        outs = torch.stack(outs)
         return outs
 
     def extract_support_code(self, y):
