@@ -237,7 +237,7 @@ class PoseMSMetaResNet(nn.Module):
         ret['wh'] = torch.cat(ret['wh'], dim=2)
         ret['reg'] = torch.cat(ret['reg'], dim=2)
            
-        return ret
+        return [ret]
 
     def extract_features(self,x):
         x = self.conv1(x)
