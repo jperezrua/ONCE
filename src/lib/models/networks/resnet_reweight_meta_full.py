@@ -220,7 +220,6 @@ class PoseMSMetaResNet(nn.Module):
     def forward(self, x, y):
 	    B = x.size(0)
         C = x.size(1)
-
         x = x.view(-1, x.shape(2), x.shape(3), x.shape(4))
         x = self.extract_features(x)
         print('x feature size: ',x.shape)
