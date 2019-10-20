@@ -235,7 +235,7 @@ class PoseMSMetaResNet(nn.Module):
 
         ret['hm'] = torch.cat(ret['hm'], dim=2)
         ret['wh'] = torch.cat(ret['wh'], dim=2)
-        ret['reg'] = torch.cat(ret['reg'], dim=2)
+        ret['reg'] = torch.stack(ret['reg'], dim=1)
            
         return [ret]
 
