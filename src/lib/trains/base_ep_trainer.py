@@ -19,9 +19,9 @@ class ModelWithLoss(torch.nn.Module):
     outputs = self.model(batch['input'],batch['supp'])
 
     print('================')
-    print(outputs['hm'].size())
-    print(outputs['wh'].size())
-    print(outputs['reg'].size())
+    print(outputs[0]['hm'].size())
+    print(outputs[0]['wh'].size())
+    print(outputs[0]['reg'].size())
 
     loss, loss_stats = self.loss(outputs, batch)
     return outputs[-1], loss, loss_stats
