@@ -266,7 +266,7 @@ class EpisodicDetDataset(data.Dataset):
     query_imgs = np.stack(query_imgs, axis=0)
     
     #cv2.waitKey(0)
-    print(query_imgs.shape, hm.shape, wh.shape, support_set.shape,'**************')
+    #print(query_imgs.shape, hm.shape, wh.shape, support_set.shape,'**************')
 
     ret = {'input': query_imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': support_set, 'cat_spec_mask': cs_wh_per_query}
 

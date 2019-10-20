@@ -18,12 +18,12 @@ class ModelWithLoss(torch.nn.Module):
   def forward(self, batch):
     outputs = self.model(batch['input'],batch['supp'])
 
-    print('================')
-    print(outputs[0]['hm'].size())
-    print(outputs[0]['wh'].size())
-    print(outputs[0]['reg'].size())
-    print(batch['reg_mask'].shape)
-    print(batch['reg'].shape)
+    #print('================')
+    #print(outputs[0]['hm'].size())
+    #print(outputs[0]['wh'].size())
+    #print(outputs[0]['reg'].size())
+    #print(batch['reg_mask'].shape)
+    #print(batch['reg'].shape)
     B = batch['input'].size(0)
     C = batch['input'].size(1)
 
