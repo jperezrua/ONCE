@@ -121,6 +121,7 @@ class EpisodicDetDataset(data.Dataset):
     reg_per_query = []
     ind_per_query = []
     wh_per_query = []
+    cs_wh_per_query = []
     gt_det_per_query = []
 
     for query_idx, img in enumerate(query_imgs):
@@ -183,6 +184,7 @@ class EpisodicDetDataset(data.Dataset):
       ind_per_query.append(ind)
       wh_per_query.append(wh)
       gt_det_per_query.append(gt_det)
+      cs_wh_per_query.append(cat_spec_wh)
 
     hm = np.stack(hm_per_query)
     reg_mask = np.stack(reg_mask_per_query)
@@ -190,7 +192,7 @@ class EpisodicDetDataset(data.Dataset):
     ind = np.stack(ind_per_query)
     wh  = np.stack(wh_per_query)
 
-    return hm, reg_mask, reg, ind, wh, gt_det_per_query
+    return hm, reg_mask, reg, ind, wh, gt_det_per_query, cs_wh_per_query
 
   def _process_support_set(self, support_imgs, support_anns, cat, augment=False):
 
@@ -266,7 +268,7 @@ class EpisodicDetDataset(data.Dataset):
     #cv2.waitKey(0)
     print(query_imgs.shape, hm.shape, wh.shape, support_set.shape,'**************')
 
-    ret = {'input': query_imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': support_set}
+    ret = {'input': query_imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': support_set, 'cat_spec_mask': cs_wh_per_query}
 
     if self.opt.reg_offset:
       ret.update({'reg': reg})
