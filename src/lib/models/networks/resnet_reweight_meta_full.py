@@ -224,9 +224,13 @@ class PoseMSMetaResNet(nn.Module):
         x = self.extract_features(x)
         print('x feature size: ',x.shape)
         ret = {}
+        y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         rw  = self.rw(y,x)
+        print('rw size: ', rw.shape)
         ret['hm']  = rw[:,:self.heads['hm'],:,:]
+        print('hm size: ', hm.shape)
         ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
+        print('wh size: ', wh.shape)
         ret['reg'] = self.reg(x)
 
         return [ret]
