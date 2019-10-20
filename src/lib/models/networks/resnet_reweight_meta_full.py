@@ -402,18 +402,26 @@ class MetaNet(nn.Module):
         C = x.size(1)        
         y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         y = self.extract_support_code(y) #for batch of support sets
+        y = y.view(B, C, y.size(1))
         print('RM y.size = ',y.shape)
         o = self.apply_code(x, y)        #each corresponding image x_i to y_i
+        print('code size: ', o.shape)
         return o
 
     def apply_code(self, x, y_code):
         batch_size  = x.size(0)
-        outs = torch.nn.functional.conv2d(
-                    x.view(1, batch_size*self.feat_dim, x.size(2), x.size(3)),
-                    y_code.view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
-                    bias=None
-                )
-        outs = outs.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
+
+        outs = []
+        for xi in range(x.size(1)):
+            for yi in range(y.size(1)):
+                out = torch.nn.functional.conv2d(
+                            x[:,xi,:,:,:].view(1, batch_size*self.feat_dim, x.size(3), x.size(4)),
+                            y_code[:,yi,:].view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
+                            bias=None
+                        )
+            out = out.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
+            outs.append(out)
+            outs = torch.stack(outs)
         return outs
 
     def extract_support_code(self, y):
