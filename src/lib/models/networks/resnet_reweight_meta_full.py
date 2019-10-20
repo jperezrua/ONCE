@@ -419,7 +419,7 @@ class MetaNet(nn.Module):
                             y_code[:,yi,:].contiguous().view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
                             bias=None
                         )
-            out = out.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
+            out = out.view(batch_size, self.out_ch, out.size(2), out.size(3))
             outs.append(out)
         outs = torch.stack(outs)
         return outs
