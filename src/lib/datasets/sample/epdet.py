@@ -191,7 +191,7 @@ class EpisodicDetDataset(data.Dataset):
     reg = np.stack(reg_per_query)
     ind = np.stack(ind_per_query)
     wh  = np.stack(wh_per_query)
-
+    cs_wh_per_query = np.stack(cs_wh_per_query)
     return hm, reg_mask, reg, ind, wh, gt_det_per_query, cs_wh_per_query
 
   def _process_support_set(self, support_imgs, support_anns, cat, augment=False):
