@@ -230,12 +230,14 @@ class opts(object):
                              help='use ground truth depth.')
     # meta
     self.parser.add_argument('--k_shots', type=int, default=5)
+    self.parser.add_argument('--min_bbox_len', type=int, default=20)
     self.parser.add_argument('--n_class', type=int, default=3)
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
     self.parser.add_argument('--supp_ctxt', type=int, default=7, help='Number of pixel to add to each side of the support boxes')
     self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')
     self.parser.add_argument('--learnable', type=str, default='', help=' postfeature or all or empty')
+
 
   def parse(self, args=''):
     if args == '':

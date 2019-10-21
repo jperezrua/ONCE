@@ -51,21 +51,23 @@ class EpisodicDetDataset(data.Dataset):
     return query_img_paths, anns_per_query, category_dict
 
   def _sample_support_set(self, cat_id):
-    img_ids    = np.random.choice(self.coco_support.getImgIds(catIds=[cat_id]), self.k_shots).tolist()
-    img_items  = self.coco_support.loadImgs(ids=img_ids)
 
-    img_paths = []
-    supp_anns = []
+    img_ids    = self.coco_support.getImgIds(catIds=[cat_id])
+    #img_items  = self.coco_support.loadImgs(ids=img_ids)
+    ann_ids    = self.coco_support.getAnnIds(imgIds=img_ids)
+    anns       = self.coco_support.loadAnns(ids=ann_ids)
 
-    # this for loop is to take one randomly sampled annotation (give is cat_id) for each of the k_shots
-    for img_id, img_i in zip(img_ids, img_items):
-      img_paths.append(os.path.join(self.supp_img_dir, img_i['file_name']))
-      ann_ids    = self.coco_support.getAnnIds(imgIds=[img_id])
-      anns       = self.coco_support.loadAnns(ids=ann_ids)
-      valid_anns = [a for a in anns if a['category_id']==cat_id]
-      supp_anns.append(np.random.choice(valid_anns))
+    is_proper_size = lambda a: (a['bbox'][2]>=self.opt.min_bbox_len) & (a['bbox'][3]>=self.opt.min_bbox_len)
+    is_proper_cat = lambda a:a['category_id']==cat_id
+    good_anns = [a for a in anns if (is_proper_size(a) & is_proper_cat(a))]
+    sampled_good_anns = np.random.choice(good_anns, self.k_shots).tolist()
 
-    return img_paths, supp_anns
+    img_paths = []    
+    for s in sampled_good_anns:
+      img_file_name = self.coco_support.loadImgs([s['image_id']])[0]['file_name']
+      img_paths.append(os.path.join(self.supp_img_dir, img_file_name))
+
+    return img_paths, sampled_good_anns
 
   def _process_query(self, img, cat, augment=False):
     height, width = img.shape[0], img.shape[1]
