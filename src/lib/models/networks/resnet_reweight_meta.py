@@ -123,21 +123,12 @@ class PoseMSMetaResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-        # deconv layers
-        #self.deconv_layer_4 = self._make_deconv_layer(3, 512, [128,128,128], [4,4,4])
         # used for deconv layers
         self.deconv_layers = self._make_deconv_layer(
             3, 512,
             [256, 256, 256],
             [4, 4, 4],
         )
-
-        # post-cnn
-        #self.post_cnn = nn.Sequential(
-        #        nn.Conv2d(128, 256, kernel_size=3, bias=False, padding=1),
-        #        nn.BatchNorm2d(256, momentum=BN_MOMENTUM),
-        #        nn.ReLU(inplace=True),
-        #    )
 
         # reweight 
         block_meta, layers_meta = resnet_spec[18]
@@ -161,10 +152,6 @@ class PoseMSMetaResNet(nn.Module):
 
         self.rw = reweight_layer
 
-        #self.meta_params = list(self.rw.parameters()) + \
-        #                   list(self.reg.parameters()) + \
-        #                   list(self.post_cnn.parameters()) + \
-        #                   list(self.deconv_layer_4.parameters())
         self.meta_params = list(self.rw.parameters()) + \
                            list(self.reg.parameters())
 
@@ -226,25 +213,13 @@ class PoseMSMetaResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x, y):
-        B = x.size(0)
-        C = x.size(1)
-        x = x.view(-1, x.size(2), x.size(3), x.size(4))
-        x = self.extract_features(x)
-        x = x.view(B, C, x.size(1), x.size(2), x.size(3))
-        ret = {'hm': [], 'wh': [], 'reg': []}
+        x   = self.extract_features(x)
+        ret = {}
         rw  = self.rw(y,x)
+        ret['hm']  = rw[:,:self.heads['hm'],:,:]
+        ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
+        ret['reg'] = self.reg(x)
 
-
-        for i in range(C):
-            ret['hm'].append( rw[:,C*i:C*(i+1),:self.heads['hm'],:,:] )
-            ret['wh'].append( rw[:,C*i:C*(i+1), self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:] )
-            ret['reg'].append( self.reg(x[:,i,:,:,:]) )
-
-
-        ret['hm'] = torch.cat(ret['hm'], dim=2)
-        ret['wh'] = torch.cat(ret['wh'], dim=2)
-        ret['reg'] = torch.stack(ret['reg'], dim=1)
-           
         return [ret]
 
     def extract_features(self,x):
@@ -259,7 +234,6 @@ class PoseMSMetaResNet(nn.Module):
         x4 = self.layer4(x3)
 
         x = self.deconv_layers(x4)
-        #x = self.post_cnn(x)
 
         return x
 
@@ -398,28 +372,18 @@ class MetaNet(nn.Module):
 
 
     def forward(self, y, x):
-        B = x.size(0)
-        C = x.size(1)        
-        y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         y = self.extract_support_code(y) #for batch of support sets
-        y = y.view(B, C, y.size(1))
         o = self.apply_code(x, y)        #each corresponding image x_i to y_i
         return o
 
     def apply_code(self, x, y_code):
         batch_size  = x.size(0)
-
-        outs = []
-        for xi in range(x.size(1)):
-            for yi in range(y_code.size(1)):
-                out = torch.nn.functional.conv2d(
-                            x[:,xi,:,:,:].contiguous().view(1, batch_size*self.feat_dim, x.size(3), x.size(4)),
-                            y_code[:,yi,:].contiguous().view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
-                            bias=None
-                        )
-                out = out.view(batch_size, self.out_ch, out.size(2), out.size(3))
-                outs.append(out)
-        outs = torch.stack(outs, dim=1)
+        outs = torch.nn.functional.conv2d(
+                    x.view(1, batch_size*self.feat_dim, x.size(2), x.size(3)),
+                    y_code.view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
+                    bias=None
+                )
+        outs = outs.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
         return outs
 
     def extract_support_code(self, y):

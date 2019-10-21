@@ -10,7 +10,8 @@ import os
 from .networks.msra_resnet import get_pose_net
 from .networks.resnet_reweight import get_pose_net as get_pose_metanet
 from .networks.resnet_reweight_ms import get_pose_net as get_pose_metamsnet
-from .networks.resnet_reweight_ms_wh import get_pose_net as get_pose_meta
+#from .networks.resnet_reweight_ms_wh import get_pose_net as get_pose_meta
+from .networks.resnet_reweight_meta import get_pose_net as get_pose_meta
 from .networks.resnet_reweight_meta_full import get_pose_net as get_pose_metafull
 
 #from .networks.dlav0 import get_pose_net as get_dlav0
