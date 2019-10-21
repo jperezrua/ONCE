@@ -33,8 +33,15 @@ class ModelWithLoss(torch.nn.Module):
 
     outputs[0]['hm'] = outputs[0]['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
     outputs[0]['wh'] = outputs[0]['wh'].view(B*C,whsize[2],whsize[3],whsize[4]).contiguous()
-    outputs[0]['wh'] = outputs[0]['wh'][:,0:2,:,:]
+    #outputs[0]['wh'] = outputs[0]['wh'][:,0:2,:,:]
     outputs[0]['reg'] = outputs[0]['reg'].view(B*C,regsize[2],regsize[3],regsize[4]).contiguous()
+
+    #print(10*'=')
+    #print(outputs[0]['wh'].shape)
+    batch['cat_spec_wh'] = batch['cat_spec_wh'].view(B*C,-1,outputs[0]['wh'].size(1)).contiguous()
+    batch['cat_spec_mask'] = batch['cat_spec_mask'].view(B*C,-1,outputs[0]['wh'].size(1)).contiguous()
+    #print(batch['cat_spec_wh'].shape)
+    #print(batch['cat_spec_mask'].shape)
 
     batch['hm'] = batch['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
     batch['wh'] = batch['wh'].view(B*C,-1,2).contiguous()
