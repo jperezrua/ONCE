@@ -218,6 +218,7 @@ class PoseResNet(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        print('******** ',x.shape)
 
         x = self.deconv_layers(x)
         ret = {}
