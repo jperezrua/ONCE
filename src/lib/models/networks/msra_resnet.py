@@ -163,6 +163,7 @@ class PoseResNet(nn.Module):
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
+        #print(self.inplanes, block.expansion, planes)
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))
 
@@ -214,11 +215,16 @@ class PoseResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
 
+        #print('******** ',x.shape)
         x = self.layer1(x)
+        #print('******** ',x.shape)
         x = self.layer2(x)
+        #print('******** ',x.shape)
         x = self.layer3(x)
+        #print('******** ',x.shape)
         x = self.layer4(x)
-        print('******** ',x.shape)
+        #print('******** ',x.shape)
+        #exit()
 
         x = self.deconv_layers(x)
         ret = {}
