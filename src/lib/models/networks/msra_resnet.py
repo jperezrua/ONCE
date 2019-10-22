@@ -215,16 +215,10 @@ class PoseResNet(nn.Module):
         x = self.relu(x)
         x = self.maxpool(x)
 
-        #print('******** ',x.shape)
         x = self.layer1(x)
-        #print('******** ',x.shape)
         x = self.layer2(x)
-        #print('******** ',x.shape)
         x = self.layer3(x)
-        #print('******** ',x.shape)
         x = self.layer4(x)
-        #print('******** ',x.shape)
-        #exit()
 
         x = self.deconv_layers(x)
         ret = {}
