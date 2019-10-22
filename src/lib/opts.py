@@ -234,6 +234,7 @@ class opts(object):
     self.parser.add_argument('--n_class', type=int, default=3)
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
+    self.parser.add_argument('--metasize', type=int, default=18)
     self.parser.add_argument('--supp_ctxt', type=int, default=7, help='Number of pixel to add to each side of the support boxes')
     self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')
     self.parser.add_argument('--learnable', type=str, default='', help=' postfeature or all or empty')

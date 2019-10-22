@@ -140,7 +140,7 @@ class PoseMSMetaResNet(nn.Module):
         #    )
 
         # reweight 
-        block_meta, layers_meta = resnet_spec[18]
+        block_meta, layers_meta = resnet_spec[kwargs['metasize']]
         reweight_layer = MetaNet(
             block_meta, layers_meta,
             feat_dim=256,
@@ -470,9 +470,9 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_pose_net(num_layers, heads, head_conv, learnable):
+def get_pose_net(num_layers, heads, head_conv, learnable,metasize):
   block_class, layers = resnet_spec[num_layers]
 
-  model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv)
+  model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv, metasize=metasize)
   model.init_weights(num_layers, pretrained=True)
   return model

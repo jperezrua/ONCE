@@ -21,7 +21,7 @@ class EpBaseDetector(object):
       opt.device = torch.device('cpu')
     
     print('Creating model... in ', opt.device)
-    self.model = create_model(opt.arch, opt.heads, opt.head_conv)
+    self.model = create_model(opt.arch, opt.heads, opt.head_conv, {'learnable': None, 'metasize': opt.metasize})
     self.model = load_model(self.model, opt.load_model)
     self.model = self.model.to(opt.device)
     self.model.eval()

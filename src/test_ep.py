@@ -36,6 +36,7 @@ class PrefetchDataset(torch.utils.data.Dataset):
                     dtype=np.float32)
     return bbox
 
+
   def _get_support_images(self, dataset):
     #support_per_cat = {cat:dataset.coco_support.getImgIds(catIds=cat) for cat in dataset._valid_ids}
     support_per_cat = [(cat,dataset.coco_support.getImgIds(catIds=cat)) for cat in dataset._valid_ids]
@@ -45,30 +46,39 @@ class PrefetchDataset(torch.utils.data.Dataset):
     for elem in support_per_cat:
       cat = elem[0]
       cats.append(cat)
-      img_ids    = np.random.choice(elem[1], self.opt.k_shots).tolist()    
-      img_items  = dataset.coco_support.loadImgs(ids=img_ids)
+      #img_ids    = np.random.choice(elem[1], self.opt.k_shots).tolist()    
+      #img_items  = dataset.coco_support.loadImgs(ids=img_ids)
+
+      img_ids    =  elem[1]
+      ann_ids    = dataset.coco_support.getAnnIds(imgIds=img_ids)
+      anns       = dataset.coco_support.loadAnns(ids=ann_ids)
+      is_proper_size = lambda a: (a['bbox'][2]>=self.opt.min_bbox_len) & (a['bbox'][3]>=self.opt.min_bbox_len)
+      is_proper_cat = lambda a:a['category_id']==cat
+      good_anns = [a for a in anns if (is_proper_size(a) & is_proper_cat(a))]
+      sampled_good_anns = np.random.choice(good_anns, dataset.k_shots).tolist()
 
       img_paths = []
-      supp_anns = []
-      ims = []
-      # this for loop is to take one randomly sampled annotation (give is cat_id) for each of the k_shots
-      for img_id, img_i in zip(img_ids, img_items):
-        img_paths.append(os.path.join(dataset.supp_img_dir, img_i['file_name']))
-        ann_ids    = dataset.coco_support.getAnnIds(imgIds=[img_id])
-        anns       = dataset.coco_support.loadAnns(ids=ann_ids)
-        valid_anns = [a for a in anns if a['category_id']==cat]
-        supp_anns.append(np.random.choice(valid_anns))
+      for s in sampled_good_anns:
+        img_file_name = dataset.coco_support.loadImgs([s['image_id']])[0]['file_name']
+        img_paths.append(os.path.join(dataset.supp_img_dir, img_file_name))
 
       supp_imgs = [cv2.imread(img_path) for img_path in img_paths]
       
       out_supp = []
-      for img, ann in zip(supp_imgs, supp_anns):
+      for i, (img, ann) in enumerate(zip(supp_imgs, sampled_good_anns)):
         bbox = self._coco_box_to_bbox(ann['bbox'])
         x1,y1,x2,y2 = math.floor(bbox[0]), math.floor(bbox[1]), math.ceil(bbox[2]), math.ceil(bbox[3])
+
+        y1 = max(0, y1-self.opt.supp_ctxt)
+        x1 = max(0, x1-self.opt.supp_ctxt)
+        y2 = min(y2+self.opt.supp_ctxt, img.shape[0])
+        x2 = min(x2+self.opt.supp_ctxt, img.shape[1])
+
         inp = img[y1:y2,x1:x2,:]
+        if self.opt.debug == 5:
+          cv2.imshow('supp_{}_cat{}'.format(i,cat),inp)
 
         inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
-        ims.append(inp)
         inp = (inp.astype(np.float32) / 255.)
         inp = (inp - self.mean) / self.std
         inp = inp.transpose(2, 0, 1)
@@ -84,8 +94,8 @@ class PrefetchDataset(torch.utils.data.Dataset):
     support_images = torch.from_numpy(support_images)
     device = torch.device('cuda') if self.opt.gpus[0] >= 0 else torch.device('cpu')  
     support_images = support_images.to(device)
-    print(support_images.shape, device)
-    print(dataset._valid_ids,cats)
+    #print(support_images.shape, device)
+    #print(dataset._valid_ids,cats)
     return support_images
 
   def __getitem__(self, index):
