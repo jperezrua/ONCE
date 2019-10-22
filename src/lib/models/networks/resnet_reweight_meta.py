@@ -125,13 +125,14 @@ class PoseMSMetaResNet(nn.Module):
 
         # used for deconv layers
         self.deconv_layers = self._make_deconv_layer(
-            3, 512,
+            3,
             [256, 256, 256],
             [4, 4, 4],
         )
 
         # reweight 
-        block_meta, layers_meta = resnet_spec[18]
+        #block_meta, layers_meta = resnet_spec[18]
+        block_meta, layers_meta = resnet_spec[kwargs['metasize']]
         reweight_layer = MetaNet(
             block_meta, layers_meta,
             feat_dim=256,
@@ -185,21 +186,21 @@ class PoseMSMetaResNet(nn.Module):
 
         return deconv_kernel, padding, output_padding
 
-    def _make_deconv_layer(self, num_layers, inplanes, num_filters, num_kernels):
+    def _make_deconv_layer(self, num_layers, num_filters, num_kernels):
         assert num_layers == len(num_filters), \
             'ERROR: num_deconv_layers is different len(num_deconv_filters)'
         assert num_layers == len(num_kernels), \
             'ERROR: num_deconv_layers is different len(num_deconv_filters)'
 
         layers = []
-        inplanes_ = inplanes
         for i in range(num_layers):
             kernel, padding, output_padding = \
                 self._get_deconv_cfg(num_kernels[i], i)
+
             planes = num_filters[i]
             layers.append(
                 nn.ConvTranspose2d(
-                    in_channels=inplanes_,
+                    in_channels=self.inplanes,
                     out_channels=planes,
                     kernel_size=kernel,
                     stride=2,
@@ -208,7 +209,7 @@ class PoseMSMetaResNet(nn.Module):
                     bias=self.deconv_with_bias))
             layers.append(nn.BatchNorm2d(planes, momentum=BN_MOMENTUM))
             layers.append(nn.ReLU(inplace=True))
-            inplanes_ = planes
+            self.inplanes = planes
 
         return nn.Sequential(*layers)
 
@@ -434,9 +435,9 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_pose_net(num_layers, heads, head_conv, learnable):
+def get_pose_net(num_layers, heads, head_conv, learnable, metasize=None):
   block_class, layers = resnet_spec[num_layers]
 
-  model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv)
+  model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv, metasize=metasize)
   model.init_weights(num_layers, pretrained=True)
   return model
