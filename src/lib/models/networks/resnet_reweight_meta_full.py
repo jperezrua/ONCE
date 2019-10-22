@@ -180,6 +180,7 @@ class PoseMSMetaResNet(nn.Module):
         layers = []
         layers.append(block(self.inplanes, planes, stride, downsample))
         self.inplanes = planes * block.expansion
+        print(self.inplanes, block.expansion, planes)
         for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes))
 
@@ -252,11 +253,16 @@ class PoseMSMetaResNet(nn.Module):
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
-
+        print('*********')
+        print(x.shape)
         x1 = self.layer1(x)
+        print(x1.shape)
         x2 = self.layer2(x1)
+        print(x2.shape)
         x3 = self.layer3(x2)
+        print(x3.shape)
         x4 = self.layer4(x3)
+        print(x4.shape)
 
         x = self.deconv_layers(x4)
         #x = self.post_cnn(x)
@@ -470,7 +476,7 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_pose_net(num_layers, heads, head_conv, learnable,metasize):
+def get_pose_net(num_layers, heads, head_conv, learnable, metasize):
   block_class, layers = resnet_spec[num_layers]
 
   model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv, metasize=metasize)
