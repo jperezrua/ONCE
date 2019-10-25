@@ -118,14 +118,11 @@ class PoseMSMetaResNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
-        # deconv layers
-        #self.deconv_layer_4 = self._make_deconv_layer(3, 512, [128,128,128], [4,4,4])
         # used for deconv layers
         self.deconv_layers = self._make_deconv_layer(
             3,
@@ -133,21 +130,15 @@ class PoseMSMetaResNet(nn.Module):
             [4, 4, 4],
         )
 
-        # post-cnn
-        #self.post_cnn = nn.Sequential(
-        #        nn.Conv2d(128, 256, kernel_size=3, bias=False, padding=1),
-        #        nn.BatchNorm2d(256, momentum=BN_MOMENTUM),
-        #        nn.ReLU(inplace=True),
-        #    )
-
         # reweight 
+        #block_meta, layers_meta = resnet_spec[18]
         block_meta, layers_meta = resnet_spec[kwargs['metasize']]
         reweight_layer = MetaNet(
             block_meta, layers_meta,
             feat_dim=256,
             in_channels=3,
             out_channels=self.heads['hm']+self.heads['wh'],
-            sc_size=512 if kwargs['metasize']==18 else 2048,
+            sc_size=512 if kwargs['metasize']==18 else 2048,            
             kernel_size=1,
             stride=1,
             padding=0
@@ -163,13 +154,8 @@ class PoseMSMetaResNet(nn.Module):
 
         self.rw = reweight_layer
 
-        #self.meta_params = list(self.rw.parameters()) + \
-        #                   list(self.reg.parameters()) + \
-        #                   list(self.post_cnn.parameters()) + \
-        #                   list(self.deconv_layer_4.parameters())
         self.meta_params = list(self.rw.parameters()) + \
                            list(self.reg.parameters())
-
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -228,41 +214,38 @@ class PoseMSMetaResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-
     def forward(self, x, y):
-        B = x.size(0)
-        C = x.size(1)
-        x = x.view(-1, x.size(2), x.size(3), x.size(4))
         x = self.extract_features_encoder(x)
 
         y  = self.rw(y)
-        y  = y.view(B, C, y.size(1))
-        rw_sc = y[:,:,:self.rw.sc_size]
-        rw_hm = y[:,:,self.rw.sc_size:]
+        rw_sc = y[:,:self.rw.sc_size]
+        rw_hm = y[:,self.rw.sc_size:]
 
-        x = x.view(B, C, x.size(1), x.size(2), x.size(3))
         x = self.rw.apply_sc(x, rw_sc)
-
-        x = x.view(-1, x.size(2), x.size(3), x.size(4))
         x = self.extract_features_decoder(x)
-        x = x.view(B, C, C, x.size(1), x.size(2), x.size(3))
-
         rw_hm = self.rw.apply_code(x, rw_hm)
-        #print(rw_hm.shape,' ====')
-        ret = {'hm': [], 'wh': [], 'reg': []}
-        
-        #print('hm shape: ')
-        for i in range(C):
-            ret['hm'].append( rw_hm[:,C*i:C*(i+1),:self.heads['hm'],:,:] )
-            ret['wh'].append( rw_hm[:,C*i:C*(i+1), self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:] )
-            ret['reg'].append( self.reg(torch.mean(x[:,i,:,:,:,:],dim=1)) )
 
+        ret = {}
+        ret['hm']  = rw_hm[:,:self.heads['hm'],:,:]
+        ret['wh']  = rw_hm[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
+        ret['reg'] = self.reg(x)
 
-        ret['hm'] = torch.cat(ret['hm'], dim=2)
-        ret['wh'] = torch.cat(ret['wh'], dim=2)
-        ret['reg'] = torch.stack(ret['reg'], dim=1)
-           
         return [ret]
+
+    def extract_features(self,x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x1 = self.layer1(x)
+        x2 = self.layer2(x1)
+        x3 = self.layer3(x2)
+        x4 = self.layer4(x3)
+
+        x = self.deconv_layers(x4)
+
+        return x
 
     def extract_features_encoder(self,x):
         x = self.conv1(x)
@@ -290,18 +273,47 @@ class PoseMSMetaResNet(nn.Module):
             x: batch of images
             y_codes: list of per-category y_code 
         """
+        # TODO!!!!!!!!!!!
+        #print('======')
+        #print(y_codes.shape)
+        DIM = 256*(self.heads['hm']+self.heads['wh'])+self.rw.sc_size
+        SC = self.rw.sc_size
+        HM = 256*(self.heads['hm']+self.heads['wh'])
+        if y_codes.size(1) == DIM:
+            rw_scs = y_codes[:,:SC]
+            rw_hms = y_codes[:,SC:]
+        else:
+            rw_scs = []
+            rw_hms = []
+            for i in range(x.size(0)):
+                rw_scs.append(y_codes[:,i*DIM:i*DIM+SC])
+                rw_hms.append(y_codes[:,i*DIM+SC:(i+1)*DIM])
+            rw_scs = torch.cat(rw_scs,dim=1)
+            rw_hms = torch.cat(rw_hms,dim=1)
 
-        x = self.extract_features(x)
+        #print(rw_scs.shape)
+        #print(rw_hms.shape)
+        #print(x.shape)
+        x = self.extract_features_encoder(x)
+
+
         ret = {}
         ret['hm'] = []
         ret['wh'] = []
-        for y_code in y_codes:
-            rw = self.rw.apply_code(x, y_code)
-            ret['hm'].append( rw[:,:self.heads['hm'],:,:] )
-            ret['wh'].append( rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:] )
+        xx = []
+        for (rw_sc, rw_hm) in zip(rw_scs, rw_hms):
+            x_ = self.rw.apply_sc(x, rw_sc)
+            x_ = self.extract_features_decoder(x_)
+            xx.append(x_)
+            rw_hm = self.rw.apply_code(x_, rw_hm)
+            ret['hm'].append( rw_hm[:,:self.heads['hm'],:,:] )
+            ret['wh'].append( rw_hm[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:] )
         ret['hm']  = torch.cat(ret['hm'],dim=1)
         ret['wh']  = torch.cat(ret['wh'],dim=1)
-        ret['reg'] = self.reg(x)
+
+        xx = torch.stack(xx)
+        xx = torch.mean(xx,dim=0)
+        ret['reg'] = self.reg(xx)
 
         return [ret]
 
@@ -402,10 +414,7 @@ class MetaNet(nn.Module):
                         nn.ReLU(inplace=True)
                     )
         self.layer_hm = nn.Conv2d(512, 256*out_channels, kernel_size=1, stride=1, padding=0, bias=False)
-        self.layer_sc = nn.Sequential(
-                            nn.Conv2d(512, sc_size, kernel_size=1, stride=1, padding=0, bias=False),
-                            nn.Sigmoid()
-                        )
+        self.layer_sc = nn.Conv2d(512, sc_size, kernel_size=1, stride=1, padding=0, bias=False)
                         
         self.init_weights()
 
@@ -430,47 +439,29 @@ class MetaNet(nn.Module):
 
 
     def forward(self, y):
-        #B = x.size(0)
-        #C = x.size(1)        
-        y = y.view(-1, y.size(2), y.size(3), y.size(4), y.size(5))
         y = self.extract_support_code(y) #for batch of support sets
-        #print(y.shape)
-        #exit()
-        #y = y.view(B, C, y.size(1))
-        #o = self.apply_code(x, y)        #each corresponding image x_i to y_i
         return y
 
     def apply_sc(self, x, y_code):
         batch_size  = x.size(0)
-
-        outs = []
-        for xi in range(x.size(1)):
-            for yi in range(y_code.size(1)):
-                out = torch.nn.functional.conv2d(
-                            x[:,xi,:,:,:].contiguous().view(1, batch_size*self.sc_size, x.size(3), x.size(4)),
-                            y_code[:,yi,:].contiguous().view(batch_size*self.sc_size, 1, 1, 1), groups=batch_size*self.sc_size,
-                            bias=None
-                        )
-                out = out.view(batch_size, self.sc_size, out.size(2), out.size(3))
-                outs.append(out)
-        outs = torch.stack(outs, dim=1)
+        outs = torch.nn.functional.conv2d(
+                    x.view(1, batch_size*self.sc_size, x.size(2), x.size(3)),
+                    y_code.view(batch_size*self.sc_size, 1, 1, 1), groups=batch_size*self.sc_size,
+                    bias=None
+                )
+        outs = outs.view(batch_size, self.sc_size, outs.size(2), outs.size(3))
         return outs
 
     def apply_code(self, x, y_code):
         batch_size  = x.size(0)
-
-        outs = []
-        for xi in range(x.size(1)):
-            for yi in range(y_code.size(1)):
-                out = torch.nn.functional.conv2d(
-                            x[:,xi,yi,:,:,:].contiguous().view(1, batch_size*self.feat_dim, x.size(4), x.size(5)),
-                            y_code[:,yi,:].contiguous().view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
-                            bias=None
-                        )
-                out = out.view(batch_size, self.out_ch, out.size(2), out.size(3))
-                outs.append(out)
-        outs = torch.stack(outs, dim=1)
+        outs = torch.nn.functional.conv2d(
+                    x.view(1, batch_size*self.feat_dim, x.size(2), x.size(3)),
+                    y_code.view(batch_size*self.out_ch, self.feat_dim, 1, 1), groups=batch_size,
+                    bias=None
+                )
+        outs = outs.view(batch_size, self.out_ch, outs.size(2), outs.size(3))
         return outs
+
 
     def extract_support_code(self, y):
         yys_hm = []
@@ -532,7 +523,7 @@ resnet_spec = {10: (BasicBlock, [2, 2]),
                152: (Bottleneck, [3, 8, 36, 3])}
 
 
-def get_pose_net(num_layers, heads, head_conv, learnable, metasize):
+def get_pose_net(num_layers, heads, head_conv, learnable, metasize=None):
   block_class, layers = resnet_spec[num_layers]
 
   model = PoseMSMetaResNet(block_class, layers, heads, head_conv=head_conv, metasize=metasize)

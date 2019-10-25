@@ -28,7 +28,7 @@ class EpdetDetector(EpBaseDetector):
   def process(self, images, y_codes, return_time=False):
     with torch.no_grad():
       #output = self.model(images)[-1]
-
+      #print('y_codes.shape: ',y_codes.shape)
       if self.opt.flip_test:
         y_codes_ = []
         for _ in images:
@@ -37,15 +37,17 @@ class EpdetDetector(EpBaseDetector):
       else:
         y_codes_ = y_codes
 
+      #print('y_codes.shape: ',y_codes_.shape)
+
       output  = self.model.forward_multi_class(images, y_codes_)[-1]
 
       hm = output['hm'].sigmoid_()
 
       #yescats=[1]#list(range(20))
-      yescats=list(range(20))
-      for c in range(20):
-        if not c in yescats:
-          hm[:,c,:,:] *= 0
+      #yescats=list(range(20))
+      #for c in range(20):
+      #  if not c in yescats:
+      #    hm[:,c,:,:] *= 0
       
       
 

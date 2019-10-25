@@ -12,6 +12,7 @@ from .networks.resnet_reweight import get_pose_net as get_pose_metanet
 from .networks.resnet_reweight_ms import get_pose_net as get_pose_metamsnet
 #from .networks.resnet_reweight_ms_wh import get_pose_net as get_pose_meta
 from .networks.resnet_reweight_meta import get_pose_net as get_pose_meta
+from .networks.resnet_reweight_meta_multi import get_pose_net as get_pose_metamulti
 from .networks.resnet_reweight_meta_full import get_pose_net as get_pose_metafull
 from .networks.resnet_reweight_meta_full_multi import get_pose_net as get_pose_metafullmulti
 
@@ -25,6 +26,7 @@ _model_factory = {
   'resrw': get_pose_metanet, # 
   'resmsrw': get_pose_metamsnet,
   'resmeta': get_pose_meta,
+  'resmetamulti': get_pose_metamulti,
   'resmetafull': get_pose_metafull,
   'resmetafullmulti': get_pose_metafullmulti #this is getting funny :D
 }
