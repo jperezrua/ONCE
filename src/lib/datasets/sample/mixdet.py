@@ -8,6 +8,7 @@ import torch
 import json
 import cv2
 import os
+import random
 from utils.image import flip, color_aug
 from utils.image import get_affine_transform, affine_transform
 from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
@@ -30,14 +31,21 @@ class MixDetDataset(data.Dataset):
 
     support_set = []
     for catid in self._fewshot_ids:
-      img_ids    = self.coco_support.getImgIds(catIds=catid)
-      ann_ids    = self.coco_support.getAnnIds(imgIds=img_ids)
-      good_anns  = self.coco_support.loadAnns(ids=ann_ids) #anns already filtered
+      img_ids    = self.coco.getImgIds(catIds=catid)
+      ann_ids    = self.coco.getAnnIds(imgIds=img_ids)
+      good_anns  = self.coco.loadAnns(ids=ann_ids) #good_anns[:self.opt.k_shots]
 
-      sampled_good_anns = good_anns[:self.k_shots]
+      good_anns = [a for a in good_anns if a['category_id'] == catid]
+
+      if len(good_anns)>=self.opt.k_shots:
+        sampled_good_anns = random.sample(good_anns, self.opt.k_shots)
+      else:
+        sampled_good_anns = [random.choice(good_anns) for _ in range(self.opt.k_shots)]
+
       supp_for_catid = []
-      for ann in sampled_good_anns:
-        img_file_name = self.coco_support.loadImgs([ann['image_id']])[0]['file_name']
+
+      for sampleid, ann in enumerate(sampled_good_anns):
+        img_file_name = self.coco.loadImgs([ann['image_id']])[0]['file_name']
         img_path = os.path.join(self.img_dir, img_file_name)
         img = cv2.imread(img_path)
 
@@ -51,6 +59,7 @@ class MixDetDataset(data.Dataset):
         x2 = min(x2+self.opt.supp_ctxt, img.shape[1])
 
         inp = img[y1:y2,x1:x2,:]
+        #cv2.imshow('cat-{}-sample-{}'.format(catid,sampleid), inp)
 
         inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
         inp = (inp.astype(np.float32) / 255.)
@@ -59,10 +68,11 @@ class MixDetDataset(data.Dataset):
         supp_for_catid.append(inp)
       supp_for_catid = np.stack(supp_for_catid,axis=0)
       support_set.append(supp_for_catid)
-      
-    support_set = np.stack(support_set,axis=0)
+      #print('********* ',catid, supp_for_catid.shape)
 
-    return support_set
+    support_set = np.stack(support_set,axis=0)
+    #cv2.waitKey(0)
+    return torch.from_numpy(support_set)
 
 
   def __getitem__(self, index):

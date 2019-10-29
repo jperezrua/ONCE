@@ -238,7 +238,9 @@ class opts(object):
     self.parser.add_argument('--supp_ctxt', type=int, default=7, help='Number of pixel to add to each side of the support boxes')
     self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')
     self.parser.add_argument('--learnable', type=str, default='', help=' postfeature or all or empty')
-
+    self.parser.add_argument('--arch_supp', type=str, default='resmeta_50', help='')
+    self.parser.add_argument('--load_suppmodel', default='../models/best_resmeta_50/model_last.pth',
+                             help='path to pretrained meta-model')
 
   def parse(self, args=''):
     if args == '':
@@ -344,7 +346,7 @@ class opts(object):
         opt.heads.update({'hm_hp': 17})
       if opt.reg_hp_offset:
         opt.heads.update({'hp_offset': 2})
-    elif opt.task == 'epdet':
+    elif opt.task == 'epdet' or opt.task == 'mixdet':
       if opt.ep_test <= 1:
         opt.heads = {'hm': 1, 'wh': 2}      
       else:

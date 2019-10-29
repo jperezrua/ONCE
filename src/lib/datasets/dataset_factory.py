@@ -7,6 +7,7 @@ from .sample.exdet import EXDetDataset
 from .sample.ctdet import CTDetDataset
 from .sample.multi_pose import MultiPoseDataset
 from .sample.epdet import EpisodicDetDataset
+from .sample.mixdet import MixDetDataset
 
 from .dataset.coco import COCO
 from .dataset.pascal import PascalVOC
@@ -14,7 +15,7 @@ from .dataset.kitti import KITTI
 from .dataset.coco_hp import COCOHP
 from .dataset.coco_base import COCOBase
 from .dataset.coco_episodic import COCOEpisodic
-
+from .dataset.coco_mixed import COCOMixed
 
 dataset_factory = {
   'coco': COCO,
@@ -22,7 +23,8 @@ dataset_factory = {
   'kitti': KITTI,
   'coco_hp': COCOHP,
   'coco_base': COCOBase,
-  'coco_ep': COCOEpisodic
+  'coco_ep': COCOEpisodic,
+  'coco_mixed': COCOMixed
 }
 
 _sample_factory = {
@@ -30,7 +32,8 @@ _sample_factory = {
   'ctdet': CTDetDataset,
   'ddd': DddDataset,
   'multi_pose': MultiPoseDataset,
-  'epdet': EpisodicDetDataset
+  'epdet': EpisodicDetDataset,
+  'mixdet': MixDetDataset
 }
 
 

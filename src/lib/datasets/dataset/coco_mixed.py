@@ -63,6 +63,10 @@ class COCOMixed(data.Dataset):
       61, 65, 70, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
     self._fewshot_ids = [id for id in self._valid_ids if id not in self._base_ids]
 
+    # for use externally
+    self._simple_novel_ids = [self._valid_ids.index(ii) for ii in self._fewshot_ids]
+    self._simple_base_ids = [self._valid_ids.index(ii) for ii in self._base_ids]
+
     self.cat_ids = {v: i for i, v in enumerate(self._valid_ids)}
     self.voc_color = [(v // 32 * 64 + 64, (v // 8) % 4 * 64, v % 8 * 32) \
                       for v in range(1, self.num_classes + 1)]
