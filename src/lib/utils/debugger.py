@@ -8,7 +8,7 @@ from .ddd_utils import compute_box_3d, project_to_image, draw_box_3d
 
 class Debugger(object):
   def __init__(self, ipynb=False, theme='black', 
-               num_classes=-1, dataset=None, down_ratio=4):
+               num_classes=-1, dataset=None, down_ratio=4, novel_only=True):
     self.ipynb = ipynb
     if not self.ipynb:
       import matplotlib.pyplot as plt
@@ -43,6 +43,10 @@ class Debugger(object):
         (255, 0, 0), (0, 0, 255)]
     elif num_classes == 80 or dataset == 'coco':
       self.names = coco_class_name
+    elif dataset == 'coco_mixed' and not novel_only:
+      self.names = coco_class_name      
+    elif dataset == 'coco_mixed' and novel_only:
+      self.names = coconovel_class_name            
     elif num_classes == 1 or dataset == 'coco_ep':
       self.names = coconovel_class_name
     elif num_classes == 60 or dataset == 'coco_base':

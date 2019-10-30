@@ -241,6 +241,8 @@ class opts(object):
     self.parser.add_argument('--arch_supp', type=str, default='resmeta_50', help='')
     self.parser.add_argument('--load_suppmodel', default='../models/best_resmeta_50/model_last.pth',
                              help='path to pretrained meta-model')
+    self.parser.add_argument('--coco_eval_novel_only', action='store_true', 
+                             help='use ground truth depth.')
 
   def parse(self, args=''):
     if args == '':
@@ -330,7 +332,7 @@ class opts(object):
           {'wh': 2})
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
-    elif opt.task == 'ctdet':
+    elif opt.task == 'ctdet' or opt.task == 'mixdet':
       # assert opt.dataset in ['pascal', 'coco']
       opt.heads = {'hm': opt.num_classes,
                    'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
