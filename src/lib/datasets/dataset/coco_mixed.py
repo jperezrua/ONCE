@@ -24,9 +24,14 @@ class COCOMixed(data.Dataset):
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
 
     if split == 'train':
-      self.annot_path = os.path.join(
-        self.data_dir, 'annotations', 
-        'instances_mixed_{}2017.json').format(split)
+      if opt.all_data:
+        self.annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_mixed_{}2017.json').format(split)
+      else:
+        self.annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_fewshotonly_{}2017.json').format(split)        
     else:
       if not opt.coco_eval_novel_only:
         self.annot_path = os.path.join(

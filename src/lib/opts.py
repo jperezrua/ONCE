@@ -243,7 +243,8 @@ class opts(object):
                              help='path to pretrained meta-model')
     self.parser.add_argument('--coco_eval_novel_only', action='store_true', 
                              help='use ground truth depth.')
-
+    self.parser.add_argument('--all_data', action='store_true', 
+                             help='use base class data as well.')
   def parse(self, args=''):
     if args == '':
       opt = self.parser.parse_args()
