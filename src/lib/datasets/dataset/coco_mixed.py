@@ -31,7 +31,8 @@ class COCOMixed(data.Dataset):
       else:
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
-          'instances_fewshotonly_{}2017.json').format(split)        
+          'instances_fewshotonly_{}2017.json').format(split)   
+        print('Loaded fewshot only instances')     
     else:
       if not opt.coco_eval_novel_only:
         self.annot_path = os.path.join(

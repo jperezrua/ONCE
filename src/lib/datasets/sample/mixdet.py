@@ -45,6 +45,7 @@ class MixDetDataset(data.Dataset):
       supp_for_catid = []
 
       for sampleid, ann in enumerate(sampled_good_anns):
+        #print(catid, ann)
         img_file_name = self.coco.loadImgs([ann['image_id']])[0]['file_name']
         img_path = os.path.join(self.img_dir, img_file_name)
         img = cv2.imread(img_path)
