@@ -29,7 +29,10 @@ def main(opt):
   opt.device = torch.device('cuda' if opt.gpus[0] >= 0 else 'cpu')
   
   print('Creating model for support...')
-  model_supp = create_model(opt.arch_supp, opt.heads, 
+  model_heads = {'hm': 1,
+                'wh': 2,
+                'reg': 2}
+  model_supp = create_model(opt.arch_supp, model_heads, 
                 opt.head_conv, extras={'learnable': opt.learnable, 'metasize': opt.metasize})
 
   if opt.load_suppmodel:

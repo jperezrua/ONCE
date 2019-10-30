@@ -143,8 +143,6 @@ class PoseMSMetaResNet(nn.Module):
             padding=0
         )
 
-        print('ah wait::: ',self.heads['hm']+self.heads['wh'])
-
         self.reg = nn.Conv2d(
             in_channels=256,
             out_channels=self.heads['reg'],
@@ -349,15 +347,9 @@ class MetaNet(nn.Module):
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)    
-
-        
-
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)                           
         self.conv_o = nn.Conv2d(self.inplanes, 256*out_channels, kernel_size=1, stride=1, padding=0,
                                bias=False)
-
-        print('oh god no::: ',self.conv_o.weight.shape, 256*out_channels)
-
         self.init_weights()
 
         self.out_ch = out_channels
