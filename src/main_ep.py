@@ -19,7 +19,12 @@ from trains.train_factory import train_factory
 def main(opt):
   #torch.manual_seed(opt.seed)
   torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
-  Dataset = get_dataset(opt.dataset, opt.task)
+
+  if opt.task != 'reweight_paper':
+    Dataset = get_dataset(opt.dataset, opt.task)
+  else:
+    Dataset = get_dataset('coco_mixed', 'mixdet')
+
   opt = opts().update_dataset_info_and_set_heads(opt, Dataset)
   print(opt)
 
@@ -29,39 +34,62 @@ def main(opt):
   opt.device = torch.device('cuda' if opt.gpus[0] >= 0 else 'cpu')
   
   print('Creating model...')
-  model = create_model(opt.arch, opt.heads, opt.head_conv, extras={'learnable': opt.learnable, 'metasize': opt.metasize})
+  if opt.task != 'reweight_paper':
+    model = create_model(opt.arch, opt.heads, opt.head_conv, extras={'learnable': opt.learnable, 'metasize': opt.metasize})
+  else:
+    print(100*'=')
+    print(opt.heads, opt.head_conv)
+    print(Dataset.num_classes)
+    model = create_model('resmeta_50', opt.heads, opt.head_conv, extras={'learnable': opt.learnable, 'metasize': opt.metasize})
+
   optimizer = torch.optim.Adam(model.meta_params, opt.lr)
   start_epoch = 0
   if opt.load_model != '':
     model, optimizer, start_epoch = load_model(
       model, opt.load_model, optimizer, opt.resume, opt.lr, opt.lr_step)
 
-  Trainer = train_factory[opt.task]
+  if opt.task != 'reweight_paper':
+    Trainer = train_factory[opt.task]
+  else:
+    Trainer = train_factory['epdet']
+
   trainer = Trainer(opt, model, optimizer)
   trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
   print('Setting up data...')
-  val_loader = torch.utils.data.DataLoader(
-      Dataset(opt, 'val', base=True), #the 20 left-out classes are only for testing
-      batch_size=1, 
-      shuffle=False,
-      num_workers=1,
-      pin_memory=True
-  )
+  if opt.task != 'reweight_paper':
+    val_loader = torch.utils.data.DataLoader(
+        Dataset(opt, 'val', base=True), #the 20 left-out classes are only for testing
+        batch_size=1, 
+        shuffle=False,
+        num_workers=1,
+        pin_memory=True
+    )
+    train_loader = torch.utils.data.DataLoader(
+        Dataset(opt, 'train', base=True), 
+        batch_size=opt.batch_size, 
+        shuffle=True,
+        num_workers=opt.num_workers,
+        pin_memory=True,
+        drop_last=True
+    )
+  else:
+    val_loader = torch.utils.data.DataLoader(
+        Dataset(opt, 'val'),
+        batch_size=1, 
+        shuffle=False,
+        num_workers=1,
+        pin_memory=True
+    )    
 
-  if opt.test:
-    _, preds = trainer.val(0, val_loader)
-    val_loader.dataset.run_eval(preds, opt.save_dir)
-    return
-
-  train_loader = torch.utils.data.DataLoader(
-      Dataset(opt, 'train', base=True), 
-      batch_size=opt.batch_size, 
-      shuffle=True,
-      num_workers=opt.num_workers,
-      pin_memory=True,
-      drop_last=True
-  )
+    train_loader = torch.utils.data.DataLoader(
+        Dataset(opt, 'train'), 
+        batch_size=opt.batch_size, 
+        shuffle=True,
+        num_workers=opt.num_workers,
+        pin_memory=True,
+        drop_last=True
+    )
 
   if opt.load_basemodel:
     print('=====> Loading pretrained models')

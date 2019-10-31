@@ -83,7 +83,7 @@ def main(opt):
 
 
   print('Extracting weights from supp model given support samples...')
-  support_set = train_loader.dataset.get_support_set()
+  support_set = torch.from_numpy(train_loader.dataset.get_support_set())
   support_set.to(opt.device)
   support_code = model_supp.rw.extract_support_code(support_set)
   print(support_code.shape)

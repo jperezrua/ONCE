@@ -73,7 +73,7 @@ class MixDetDataset(data.Dataset):
 
     support_set = np.stack(support_set,axis=0)
     #cv2.waitKey(0)
-    return torch.from_numpy(support_set)
+    return support_set
 
 
   def __getitem__(self, index):
@@ -176,7 +176,7 @@ class MixDetDataset(data.Dataset):
         gt_det.append([ct[0] - w / 2, ct[1] - h / 2, 
                        ct[0] + w / 2, ct[1] + h / 2, 1, cls_id])
     
-    ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh}
+    ret = {'input': inp, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'supp': self.get_support_set()}
     if self.opt.dense_wh:
       hm_a = hm.max(axis=0, keepdims=True)
       dense_wh_mask = np.concatenate([hm_a, hm_a], axis=0)

@@ -16,6 +16,9 @@ class ModelWithLoss(torch.nn.Module):
     self.loss = loss
   
   def forward(self, batch):
+
+    #print('Batch input size: ', batch['input'].shape , batch['supp'].shape)
+
     outputs = self.model(batch['input'],batch['supp'])
 
     #print('================')
@@ -24,31 +27,38 @@ class ModelWithLoss(torch.nn.Module):
     #print(outputs[0]['reg'].size())
     #print(batch['reg_mask'].shape)
     #print(batch['reg'].shape)
-    B = batch['input'].size(0)
-    C = batch['input'].size(1)
+    if len(batch['input'].shape)==5:
+      B = batch['input'].size(0)
+      C = batch['input'].size(1)
 
-    hmsize = outputs[0]['hm'].size()
-    whsize = outputs[0]['wh'].size()
-    regsize = outputs[0]['reg'].size()
+      hmsize = outputs[0]['hm'].size()
+      whsize = outputs[0]['wh'].size()
+      regsize = outputs[0]['reg'].size()
 
-    outputs[0]['hm'] = outputs[0]['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
-    outputs[0]['wh'] = outputs[0]['wh'].view(B*C,whsize[2],whsize[3],whsize[4]).contiguous()
-    #outputs[0]['wh'] = outputs[0]['wh'][:,0:2,:,:]
-    outputs[0]['reg'] = outputs[0]['reg'].view(B*C,regsize[2],regsize[3],regsize[4]).contiguous()
+      outputs[0]['hm'] = outputs[0]['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
+      outputs[0]['wh'] = outputs[0]['wh'].view(B*C,whsize[2],whsize[3],whsize[4]).contiguous()
+      #outputs[0]['wh'] = outputs[0]['wh'][:,0:2,:,:]
+      outputs[0]['reg'] = outputs[0]['reg'].view(B*C,regsize[2],regsize[3],regsize[4]).contiguous()
 
-    #print(10*'=')
-    #print(outputs[0]['wh'].shape)
-    batch['cat_spec_wh'] = batch['cat_spec_wh'].view(B*C,-1,outputs[0]['wh'].size(1)).contiguous()
-    batch['cat_spec_mask'] = batch['cat_spec_mask'].view(B*C,-1,outputs[0]['wh'].size(1)).contiguous()
-    #print(batch['cat_spec_wh'].shape)
-    #print(batch['cat_spec_mask'].shape)
+      #print(10*'=')
+      #print(outputs[0]['wh'].shape)
+      batch['cat_spec_wh'] = batch['cat_spec_wh'].view(B*C,-1,outputs[0]['wh'].size(1)).contiguous()
+      batch['cat_spec_mask'] = batch['cat_spec_mask'].view(B*C,-1,outputs[0]['wh'].size(1)).contiguous()
+      #print(batch['cat_spec_wh'].shape)
+      #print(batch['cat_spec_mask'].shape)
 
-    batch['hm'] = batch['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
-    batch['wh'] = batch['wh'].view(B*C,-1,2).contiguous()
-    batch['ind'] = batch['ind'].view(B*C,-1).contiguous()
-    batch['reg_mask'] = batch['reg_mask'].view(B*C,-1).contiguous()
-    batch['reg'] = batch['reg'].view(B*C,-1,2).contiguous()
+      batch['hm'] = batch['hm'].view(B*C,hmsize[2],hmsize[3],hmsize[4]).contiguous()
+      batch['wh'] = batch['wh'].view(B*C,-1,2).contiguous()
+      batch['ind'] = batch['ind'].view(B*C,-1).contiguous()
+      batch['reg_mask'] = batch['reg_mask'].view(B*C,-1).contiguous()
+      batch['reg'] = batch['reg'].view(B*C,-1,2).contiguous()
+    else:
+      B = batch['input'].size(0)
+      C = 1
 
+      hmsize = outputs[0]['hm'].size()
+      whsize = outputs[0]['wh'].size()
+      regsize = outputs[0]['reg'].size()
 
     loss, loss_stats = self.loss(outputs, batch)
     return outputs[-1], loss, loss_stats

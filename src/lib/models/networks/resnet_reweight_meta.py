@@ -217,9 +217,15 @@ class PoseMSMetaResNet(nn.Module):
         x   = self.extract_features(x)
         ret = {}
         rw  = self.rw(y,x)
-        ret['hm']  = rw[:,:self.heads['hm'],:,:]
-        ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
-        ret['reg'] = self.reg(x)
+        #print('rw:',rw.shape)
+        if len(rw.shape)==5:
+            ret['hm']  = rw[:,:,:self.heads['hm'],:,:].view(rw.size(0),rw.size(1),rw.size(3),rw.size(4))
+            ret['wh']  = rw[:,:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:].contiguous().view(rw.size(0),rw.size(1)*self.heads['wh'],rw.size(3),rw.size(4))
+            ret['reg'] = self.reg(x)
+        else:
+            ret['hm']  = rw[:,:self.heads['hm'],:,:]
+            ret['wh']  = rw[:,self.heads['hm']:self.heads['hm']+self.heads['wh'],:,:]
+            ret['reg'] = self.reg(x)
 
         return [ret]
 
@@ -373,8 +379,28 @@ class MetaNet(nn.Module):
 
 
     def forward(self, y, x):
-        y = self.extract_support_code(y) #for batch of support sets
-        o = self.apply_code(x, y)        #each corresponding image x_i to y_i
+        #print(y.shape)
+        #print(x.shape)
+        insize = y.shape
+        if len(insize)==6:
+            yy = y.view(-1,y.size(2),y.size(3),y.size(4),y.size(5))
+            yy = self.extract_support_code(yy) #for batch of support sets    
+            y = yy.view(insize[0],insize[1],-1)
+        else:
+            y = self.extract_support_code(y) #for batch of support sets
+
+        if len(insize)==6:
+            #print(y.shape)
+            #too much memory
+            #xx = x.repeat(y.size(1),1,1,1)
+            #o = self.apply_code(xx, y.view(-1,y.size(2)))
+            #o = o.view(-1,y.size(1),o.size(1),o.size(2),o.size(3))
+            oo = []
+            for i in range(y.size(1)):
+                oo.append(self.apply_code(x, y[:,i,:]))
+            o = torch.stack(oo,dim=1)
+        else:
+            o = self.apply_code(x, y)        #each corresponding image x_i to y_i
         return o
 
     def apply_code(self, x, y_code):

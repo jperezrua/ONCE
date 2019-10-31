@@ -24,15 +24,20 @@ class COCOMixed(data.Dataset):
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
 
     if split == 'train':
-      if opt.all_data:
+      if opt.fewshot_data == 'all_data':
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_mixed_{}2017.json').format(split)
-      else:
+      elif opt.fewshot_data == 'novel_only':
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_fewshotonly_{}2017.json').format(split)   
-        print('Loaded fewshot only instances')     
+        print('Loading fewshot only')
+      elif opt.fewshot_data == 'basenovel_fewshot':
+        self.annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_all_fewshot_{}2017.json').format(split)   
+        print('Loading fewshot for every category')        
     else:
       if not opt.coco_eval_novel_only:
         self.annot_path = os.path.join(
@@ -72,7 +77,11 @@ class COCOMixed(data.Dataset):
       8, 10, 11, 13, 14, 15, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38,
       39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
       61, 65, 70, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
-    self._fewshot_ids = [id for id in self._valid_ids if id not in self._base_ids]
+
+    if opt.fewshot_data != 'basenovel_fewshot':
+      self._fewshot_ids = [id for id in self._valid_ids if id not in self._base_ids]
+    else:
+      self._fewshot_ids = self._valid_ids
 
     # for use externally
     self._simple_novel_ids = [self._valid_ids.index(ii) for ii in self._fewshot_ids]

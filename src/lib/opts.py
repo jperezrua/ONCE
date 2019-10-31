@@ -234,7 +234,7 @@ class opts(object):
     self.parser.add_argument('--n_class', type=int, default=3)
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
-    self.parser.add_argument('--metasize', type=int, default=18)
+    self.parser.add_argument('--metasize', type=int, default=50)
     self.parser.add_argument('--supp_ctxt', type=int, default=7, help='Number of pixel to add to each side of the support boxes')
     self.parser.add_argument('--ep_test',type=int, default=1, help='Number of per-class heatmaps to use during episodic testing')
     self.parser.add_argument('--learnable', type=str, default='', help=' postfeature or all or empty')
@@ -243,8 +243,7 @@ class opts(object):
                              help='path to pretrained meta-model')
     self.parser.add_argument('--coco_eval_novel_only', action='store_true', 
                              help='use ground truth depth.')
-    self.parser.add_argument('--all_data', action='store_true', 
-                             help='use base class data as well.')
+    self.parser.add_argument('--fewshot_data', type=str, help='all_data (B+N) | novel_only | basenovel_fewshot')
   def parse(self, args=''):
     if args == '':
       opt = self.parser.parse_args()
@@ -349,7 +348,7 @@ class opts(object):
         opt.heads.update({'hm_hp': 17})
       if opt.reg_hp_offset:
         opt.heads.update({'hp_offset': 2})
-    elif opt.task == 'epdet' or opt.task == 'mixdet':
+    elif opt.task == 'epdet' or opt.task == 'reweight_paper':
       if opt.ep_test <= 1:
         opt.heads = {'hm': 1, 'wh': 2}      
       else:
