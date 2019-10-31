@@ -23,6 +23,7 @@ def main(opt):
   if opt.task != 'reweight_paper':
     Dataset = get_dataset(opt.dataset, opt.task)
   else:
+    #python main_ep.py reweight_paper --load_model ../models/best_resmeta_50/model_last.pth  --fewshot_data basenovel_fewshot --master_batch_size 1 --batch_size 8 --head_conv 0 --cat_spec_wh --lr 1e-5 --gpus 0,1,2,3,4,5,6,7,8
     Dataset = get_dataset('coco_mixed', 'mixdet')
 
   opt = opts().update_dataset_info_and_set_heads(opt, Dataset)
@@ -42,7 +43,11 @@ def main(opt):
     print(Dataset.num_classes)
     model = create_model('resmeta_50', opt.heads, opt.head_conv, extras={'learnable': opt.learnable, 'metasize': opt.metasize})
 
-  optimizer = torch.optim.Adam(model.meta_params, opt.lr)
+  if opt.task != 'reweight_paper':
+    optimizer = torch.optim.Adam(model.meta_params, opt.lr)
+  else:
+    optimizer = torch.optim.Adam(model.parameters(), opt.lr)
+
   start_epoch = 0
   if opt.load_model != '':
     model, optimizer, start_epoch = load_model(
