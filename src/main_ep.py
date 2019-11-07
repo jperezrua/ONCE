@@ -49,9 +49,17 @@ def main(opt):
     optimizer = torch.optim.Adam(model.parameters(), opt.lr)
 
   start_epoch = 0
-  if opt.load_model != '':
-    model, optimizer, start_epoch = load_model(
-      model, opt.load_model, optimizer, opt.resume, opt.lr, opt.lr_step)
+  if opt.task != 'reweight_paper':
+    if opt.load_model != '':
+      model, optimizer, start_epoch = load_model(
+        model, opt.load_model, optimizer, opt.resume, opt.lr, opt.lr_step)
+  else:
+    if opt.load_model != '':
+      l = torch.load(opt.load_model)['state_dict']    
+      mk,uk = model.load_state_dict(l, strict=False)
+      print('Missing Keys for model:    ',mk)
+      print('')
+      print('Unknown Keys for model:    ',uk)      
 
   if opt.task != 'reweight_paper':
     Trainer = train_factory[opt.task]
@@ -96,21 +104,22 @@ def main(opt):
         drop_last=True
     )
 
-  if opt.load_basemodel:
-    print('=====> Loading pretrained models')
-    l = torch.load(opt.load_basemodel)['state_dict']
-    mk,uk = model.load_state_dict(l, strict=False)
-    print('Missing Keys for base model:    ',mk)
-    print('')
-    print('Unknown Keys for base model:    ',uk)
+  if opt.task != 'reweight_paper':
+    if opt.load_basemodel:
+      print('=====> Loading pretrained models')
+      l = torch.load(opt.load_basemodel)['state_dict']
+      mk,uk = model.load_state_dict(l, strict=False)
+      print('Missing Keys for base model:    ',mk)
+      print('')
+      print('Unknown Keys for base model:    ',uk)
 
-  if opt.load_metamodel:
-    print('=====> Loading meta-pretrained models')
-    l = torch.load(opt.load_metamodel)['state_dict']
-    mk,uk = model.rw.load_state_dict(l, strict=False)
-    print('Missing Keys for meta model:    ',mk)
-    print('')
-    print('Unknown Keys for meta model:    ',uk)
+    if opt.load_metamodel:
+      print('=====> Loading meta-pretrained models')
+      l = torch.load(opt.load_metamodel)['state_dict']
+      mk,uk = model.rw.load_state_dict(l, strict=False)
+      print('Missing Keys for meta model:    ',mk)
+      print('')
+      print('Unknown Keys for meta model:    ',uk)
 
   print('Starting training...')
   best = 1e10
