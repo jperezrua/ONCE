@@ -31,9 +31,9 @@ class MixDetDataset(data.Dataset):
 
     support_set = []
     for catid in self._fewshot_ids:
-      img_ids    = self.coco.getImgIds(catIds=catid)
-      ann_ids    = self.coco.getAnnIds(imgIds=img_ids)
-      good_anns  = self.coco.loadAnns(ids=ann_ids) #good_anns[:self.opt.k_shots]
+      img_ids    = self.coco_supp.getImgIds(catIds=catid)
+      ann_ids    = self.coco_supp.getAnnIds(imgIds=img_ids)
+      good_anns  = self.coco_supp.loadAnns(ids=ann_ids) #good_anns[:self.opt.k_shots]
 
       good_anns = [a for a in good_anns if a['category_id'] == catid]
 
@@ -47,7 +47,7 @@ class MixDetDataset(data.Dataset):
       for sampleid, ann in enumerate(sampled_good_anns):
         #print(catid, ann)
         img_file_name = self.coco.loadImgs([ann['image_id']])[0]['file_name']
-        img_path = os.path.join(self.img_dir, img_file_name)
+        img_path = os.path.join(self.supp_img_dir, img_file_name)
         img = cv2.imread(img_path)
 
         bbox = self._coco_box_to_bbox(ann['bbox'])

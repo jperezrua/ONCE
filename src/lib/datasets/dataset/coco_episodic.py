@@ -196,3 +196,4 @@ class COCOEpisodic(data.Dataset):
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()
+    return coco_eval.stats

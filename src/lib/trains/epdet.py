@@ -108,10 +108,10 @@ class EpisodicDetTrainer (BaseEpisodicTrainer):
       debugger.add_blend_img(img, gt, 'gt_hm')
       debugger.add_img(img, img_id='out_pred')
 
-      for j,bim in enumerate(batch['supp'][i]):
-        s = bim.detach().cpu().numpy().transpose(1, 2, 0)
-        s = np.clip(((s * opt.std + opt.mean) * 255.), 0, 255).astype(np.uint8)
-        debugger.add_img(s, img_id='supp_'+str(j))
+      #for j,bim in enumerate(batch['supp'][i]):
+      #  s = bim.detach().cpu().numpy().transpose(1, 2, 0)
+      #  s = np.clip(((s * opt.std + opt.mean) * 255.), 0, 255).astype(np.uint8)
+      #  debugger.add_img(s, img_id='supp_'+str(j))
 
       debugger.add_img(img, img_id='out_pred')
       for k in range(len(dets[i])):

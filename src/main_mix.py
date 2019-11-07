@@ -97,8 +97,13 @@ def main(opt):
   mk,_ = model.load_state_dict( model_supp.state_dict(), strict=False )
   print('Missing Keys for model:    ',mk)
   
-  print('Initialize reg weights')
+  print('!!!!!!! Initialize reg weights !!!!!!!!!')
   model.reg.weight.data = model_supp.reg.weight.data
+
+  print(train_loader.dataset._simple_novel_ids)
+  print(support_code[:,:256].shape)
+  print(model.hm.weight.data.shape)
+
   model.hm.weight.data[train_loader.dataset._simple_novel_ids] = support_code[:,:256].view(20,256,1,1).to(opt.device)
   model.wh.weight.data = torch.mean(support_code[:,256:],dim=0).view(2,256,1,1).to(opt.device)
   model.to(opt.device)

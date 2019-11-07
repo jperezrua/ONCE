@@ -52,6 +52,7 @@ class MixdetDetector(BaseDetector):
       output = self.model(images)[-1]
 
       if self.opt.coco_eval_novel_only:
+        #print('obtaining hm for novel classes only')
         output['hm'] = output['hm'][:,self._simple_novel_ids,:,:]
 
       hm = output['hm'].sigmoid_()

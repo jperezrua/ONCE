@@ -22,31 +22,47 @@ class COCOMixed(data.Dataset):
     super(COCOMixed, self).__init__()
     self.data_dir = os.path.join(opt.data_dir, 'coco')
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
+    self.supp_img_dir = os.path.join(self.data_dir, '{}2017'.format('train'))
 
     if split == 'train':
       if opt.fewshot_data == 'all_data':
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_mixed_{}2017.json').format(split)
+        self.supp_annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_mixed_{}2017.json').format(split)          
       elif opt.fewshot_data == 'novel_only':
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
-          'instances_fewshotonly_{}2017.json').format(split)   
+          'instances_fewshotonly_{}2017.json').format(split) 
+        self.supp_annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_fewshotonly_{}2017.json').format(split)             
         print('Loading fewshot only')
       elif opt.fewshot_data == 'basenovel_fewshot':
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_all_fewshot_{}2017.json').format(split)   
+        self.supp_annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_all_fewshot_{}2017.json').format(split)             
         print('Loading fewshot for every category')        
     else:
       if not opt.coco_eval_novel_only:
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_{}2017.json').format(split)
+        self.supp_annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_all_fewshot_{}2017.json').format('train')
       else:
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_novel_{}2017.json').format(split)
+        self.supp_annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'instances_fewshotonly_{}2017.json').format('train')
 
     self.max_objs = 128
     self.class_name = [
@@ -78,7 +94,7 @@ class COCOMixed(data.Dataset):
       39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
       61, 65, 70, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
 
-    if opt.fewshot_data != 'basenovel_fewshot':
+    if opt.coco_eval_novel_only or split == 'train':
       self._fewshot_ids = [id for id in self._valid_ids if id not in self._base_ids]
     else:
       self._fewshot_ids = self._valid_ids
@@ -104,6 +120,7 @@ class COCOMixed(data.Dataset):
 
     print('==> initializing coco 2017 {} data.'.format(split))
     self.coco = coco.COCO(self.annot_path)
+    self.coco_supp = coco.COCO(self.supp_annot_path)
     self.images = self.coco.getImgIds()
     self.num_samples = len(self.images)
 
@@ -117,7 +134,14 @@ class COCOMixed(data.Dataset):
     detections = []
     for image_id in all_bboxes:
       for cls_ind in all_bboxes[image_id]:
-        category_id = self._valid_ids[cls_ind - 1]
+
+        if self.opt.coco_eval_novel_only:
+          if cls_ind>=20:
+            continue          
+          category_id = self._fewshot_ids[cls_ind - 1]
+        else:
+          category_id = self._valid_ids[cls_ind - 1]
+
         for bbox in all_bboxes[image_id][cls_ind]:
           bbox[2] -= bbox[0]
           bbox[3] -= bbox[1]

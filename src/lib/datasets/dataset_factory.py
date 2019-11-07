@@ -16,10 +16,12 @@ from .dataset.coco_hp import COCOHP
 from .dataset.coco_base import COCOBase
 from .dataset.coco_episodic import COCOEpisodic
 from .dataset.coco_mixed import COCOMixed
+from .dataset.pascal_episodic import PascalVOCEpisodic
 
 dataset_factory = {
   'coco': COCO,
   'pascal': PascalVOC,
+  'pascal_ep': PascalVOCEpisodic,
   'kitti': KITTI,
   'coco_hp': COCOHP,
   'coco_base': COCOBase,

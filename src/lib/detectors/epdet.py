@@ -24,7 +24,7 @@ from .epbase_detector import EpBaseDetector
 class EpdetDetector(EpBaseDetector):
   def __init__(self, opt):
     super(EpdetDetector, self).__init__(opt)
-  
+
   def process(self, images, y_codes, return_time=False):
     with torch.no_grad():
       #output = self.model(images)[-1]
@@ -40,7 +40,6 @@ class EpdetDetector(EpBaseDetector):
       #print('y_codes.shape: ',y_codes_.shape)
 
       output  = self.model.forward_multi_class(images, y_codes_)[-1]
-
       hm = output['hm'].sigmoid_()
 
       #yescats=[1]#list(range(20))

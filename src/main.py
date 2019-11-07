@@ -32,9 +32,7 @@ def main(opt):
   model = create_model(opt.arch, opt.heads, opt.head_conv)
   optimizer = torch.optim.Adam(model.parameters(), opt.lr)
   start_epoch = 0
-  if opt.load_model != '':
-    model, optimizer, start_epoch = load_model(
-      model, opt.load_model, optimizer, opt.resume, opt.lr, opt.lr_step)
+
 
   Trainer = train_factory[opt.task]
   trainer = Trainer(opt, model, optimizer)
@@ -62,6 +60,18 @@ def main(opt):
       pin_memory=True,
       drop_last=True
   )
+
+  if opt.load_model != '' and opt.fewshot_data != 'basenovel_fewshot':
+    model, optimizer, start_epoch = load_model(
+      model, opt.load_model, optimizer, opt.resume, opt.lr, opt.lr_step)
+  elif opt.load_model != '' and opt.fewshot_data == 'basenovel_fewshot':
+    sd = torch.load(opt.load_model)['state_dict']
+    sd_c = {k:sd[k] for k in sd if 'hm' not in k}
+    mk,uk = model.load_state_dict(sd_c, strict=False)
+    model.hm.weight.data[train_loader.dataset._simple_base_ids] = sd['hm.weight']
+    print('Missing Keys for base model:    ',mk)
+    print('')
+    print('Unknown Keys for base model:    ',uk)
 
   print('Starting training...')
   best = 1e10
