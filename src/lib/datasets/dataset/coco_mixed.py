@@ -54,14 +54,14 @@ class COCOMixed(data.Dataset):
           self.data_dir, 'annotations', 
           'instances_{}2017.json').format(split)
         self.supp_annot_path = os.path.join(
-          self.data_dir, 'annotations', 
+          self.supp_img_dir, 'annotations', 
           'instances_all_fewshot_{}2017.json').format('train')
       else:
         self.annot_path = os.path.join(
           self.data_dir, 'annotations', 
           'instances_novel_{}2017.json').format(split)
         self.supp_annot_path = os.path.join(
-          self.data_dir, 'annotations', 
+          self.supp_img_dir, 'annotations', 
           'instances_fewshotonly_{}2017.json').format('train')
 
     self.max_objs = 128
