@@ -107,6 +107,7 @@ def main(opt):
 
   model_supp = model_supp.cpu()
 
+  log_dict_val, preds = trainer.val(0, val_loader)
   print('Starting training...')
   best = 1e10
   for epoch in range(start_epoch + 1, opt.num_epochs + 1):
