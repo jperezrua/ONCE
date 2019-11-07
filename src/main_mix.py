@@ -100,11 +100,8 @@ def main(opt):
   print('!!!!!!! Initialize reg weights !!!!!!!!!')
   model.reg.weight.data = model_supp.reg.weight.data
 
-  print(train_loader.dataset._simple_novel_ids)
-  print(support_code[:,:256].shape)
-  print(model.hm.weight.data.shape)
-
-  model.hm.weight.data[train_loader.dataset._simple_novel_ids] = support_code[:,:256].view(20,256,1,1).to(opt.device)
+  num_fewshot_samples = len(support_code[:,:256])
+  model.hm.weight.data[train_loader.dataset._simple_novel_ids] = support_code[:,:256].view(num_fewshot_samples,256,1,1).to(opt.device)
   model.wh.weight.data = torch.mean(support_code[:,256:],dim=0).view(2,256,1,1).to(opt.device)
   model.to(opt.device)
 
