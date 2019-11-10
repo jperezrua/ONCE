@@ -22,6 +22,7 @@ class COCOBase(data.Dataset):
     super(COCOBase, self).__init__()
     self.data_dir = os.path.join(opt.data_dir, 'coco')
     self.img_dir = os.path.join(self.data_dir, '{}2017'.format(split))
+    self.supp_img_dir = os.path.join(self.data_dir, 'train2017')
     print(100*'*')
     print(self.img_dir, split)
 
@@ -29,7 +30,11 @@ class COCOBase(data.Dataset):
       self.annot_path = os.path.join(
         self.data_dir, 'annotations', 
         'instances_base_{}2017.json').format(split)
-      
+
+      self.supp_annot_path = os.path.join(
+        self.data_dir, 'annotations', 
+        'instances_base_fewshot_train2017.json')
+
     self.max_objs = 128
     
     non_allowed_categories = [
@@ -60,6 +65,8 @@ class COCOBase(data.Dataset):
       8, 10, 11, 13, 14, 15, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38,
       39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
       61, 65, 70, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
+    self._fewshot_ids = self._valid_ids
+
     self.cat_ids = {v: i for i, v in enumerate(self._valid_ids)}
     self.voc_color = [(v // 32 * 64 + 64, (v // 8) % 4 * 64, v % 8 * 32) \
                       for v in range(1, self.num_classes + 1)]
@@ -79,6 +86,8 @@ class COCOBase(data.Dataset):
 
     print('==> initializing coco 2017 {} data.'.format(split))
     self.coco = coco.COCO(self.annot_path)
+    self.coco_supp = coco.COCO(self.supp_annot_path)
+
     self.images = self.coco.getImgIds()
     self.num_samples = len(self.images)
 

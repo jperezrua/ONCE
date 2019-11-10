@@ -61,7 +61,7 @@ def main(opt):
       print('')
       print('Unknown Keys for model:    ',uk)      
 
-  if opt.task != 'reweight_paper':
+  if opt.task != 'reweight_paper' and opt.task != 'ctdet':
     Trainer = train_factory[opt.task]
   else:
     Trainer = train_factory['epdet']
@@ -70,7 +70,7 @@ def main(opt):
   trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
   print('Setting up data...')
-  if opt.task != 'reweight_paper':
+  if opt.task != 'reweight_paper' and opt.task != 'ctdet':
     val_loader = torch.utils.data.DataLoader(
         Dataset(opt, 'val', base=True), #the 20 left-out classes are only for testing
         batch_size=1, 

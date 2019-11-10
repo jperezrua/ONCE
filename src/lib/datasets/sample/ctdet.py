@@ -8,6 +8,8 @@ import torch
 import json
 import cv2
 import os
+import random
+
 from utils.image import flip, color_aug
 from utils.image import get_affine_transform, affine_transform
 from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
@@ -25,6 +27,50 @@ class CTDetDataset(data.Dataset):
     while size - border // i <= border // i:
         i *= 2
     return border // i
+
+  def get_support_set(self):
+
+    support_set = []
+    for catid in self._fewshot_ids:
+      img_ids    = self.coco_supp.getImgIds(catIds=catid)
+      ann_ids    = self.coco_supp.getAnnIds(imgIds=img_ids)
+      good_anns  = self.coco_supp.loadAnns(ids=ann_ids) #good_anns[:self.opt.k_shots]
+
+      good_anns = [a for a in good_anns if a['category_id'] == catid]
+
+      if len(good_anns)>=self.opt.k_shots:
+        sampled_good_anns = random.sample(good_anns, self.opt.k_shots)
+      else:
+        sampled_good_anns = [random.choice(good_anns) for _ in range(self.opt.k_shots)]
+
+      supp_for_catid = []
+
+      for sampleid, ann in enumerate(sampled_good_anns):
+        img_file_name = self.coco_supp.loadImgs([ann['image_id']])[0]['file_name']
+        img_path = os.path.join(self.supp_img_dir, img_file_name)
+        img = cv2.imread(img_path)
+
+        bbox = self._coco_box_to_bbox(ann['bbox'])
+        x1,y1,x2,y2 = math.floor(bbox[0]), math.floor(bbox[1]), math.ceil(bbox[2]), math.ceil(bbox[3])
+        
+        #give a little more of context for support
+        y1 = max(0, y1-self.opt.supp_ctxt)
+        x1 = max(0, x1-self.opt.supp_ctxt)
+        y2 = min(y2+self.opt.supp_ctxt, img.shape[0])
+        x2 = min(x2+self.opt.supp_ctxt, img.shape[1])
+
+        inp = img[y1:y2,x1:x2,:]
+
+        inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
+        inp = (inp.astype(np.float32) / 255.)
+        inp = (inp - self.mean) / self.std
+        inp = inp.transpose(2, 0, 1)
+        supp_for_catid.append(inp)
+      supp_for_catid = np.stack(supp_for_catid,axis=0)
+      support_set.append(supp_for_catid)
+
+    support_set = np.stack(support_set,axis=0)
+    return support_set
 
   def __getitem__(self, index):
     img_id = self.images[index]
@@ -142,4 +188,7 @@ class CTDetDataset(data.Dataset):
                np.zeros((1, 6), dtype=np.float32)
       meta = {'c': c, 's': s, 'gt_det': gt_det, 'img_id': img_id}
       ret['meta'] = meta
+    
+    if self.opt.fewshot_data == 'base_only':
+      ret['supp'] = self.get_support_set()
     return ret

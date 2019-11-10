@@ -60,6 +60,10 @@ class ModelWithLoss(torch.nn.Module):
       whsize = outputs[0]['wh'].size()
       regsize = outputs[0]['reg'].size()
 
+     # print('******************************************************')
+     # print(hmsize, whsize)
+     # print(batch['ind'].shape, batch['cat_spec_wh'].shape)
+
     loss, loss_stats = self.loss(outputs, batch)
     return outputs[-1], loss, loss_stats
 

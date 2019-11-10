@@ -31,7 +31,11 @@ class EpdetLoss(torch.nn.Module):
     for s in range(opt.num_stacks):
       output = outputs[s]
       if not opt.mse_loss:
-        output['hm'] = _sigmoid(output['hm'])
+        if opt.use_softmax:
+          #print('USIN SOFTMAX!!!!!!!!')
+          output['hm'] = torch.nn.functional.softmax(output['hm'],dim=1)
+        else:
+          output['hm'] = _sigmoid(output['hm'])
 
       if opt.eval_oracle_hm:
         output['hm'] = batch['hm']

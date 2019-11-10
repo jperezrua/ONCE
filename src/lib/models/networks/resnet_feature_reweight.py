@@ -154,7 +154,7 @@ class PoseMSMetaResNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(
                 in_channels=128,
-                out_channels=self.heads['hm'],
+                out_channels=1,#self.heads['hm']
                 kernel_size=1,
                 stride=1,
                 padding=0
@@ -171,7 +171,7 @@ class PoseMSMetaResNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(
                 in_channels=128,
-                out_channels=self.heads['wh'],
+                out_channels=2,#self.heads['wh']
                 kernel_size=1,
                 stride=1,
                 padding=0
@@ -191,7 +191,7 @@ class PoseMSMetaResNet(nn.Module):
         self.meta_params = list(self.rw.parameters()) + \
                            list(self.reg.parameters()) + \
                            list(self.hm.parameters()) + \
-                           list(self.wh.parameters()) + \
+                           list(self.wh.parameters()) 
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -256,8 +256,18 @@ class PoseMSMetaResNet(nn.Module):
         rw  = self.rw(y,x)
         #print('rw:',rw.shape)
         if len(rw.shape)==5:
-            ret['hm']  = self.hm(rw)
-            ret['wh']  = self.wh(rw)
+            ret['hm']  = []
+            ret['wh']  = []
+            for i in range(rw.size(1)):
+                ret['hm'].append( self.hm(rw[:,i,:,:,:]) )
+                ret['wh'].append( self.wh(rw[:,i,:,:,:]) )
+            ret['hm']  = torch.cat(ret['hm'], dim=1)
+            ret['wh']  = torch.cat(ret['wh'], dim=1)
+
+            #print(ret['hm'].shape)
+            #print(ret['wh'].shape)
+
+
             ret['reg'] = self.reg(x)
         else:
             ret['hm']  = self.hm(rw)

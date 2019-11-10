@@ -244,7 +244,9 @@ class opts(object):
                              help='path to pretrained meta-model')
     self.parser.add_argument('--coco_eval_novel_only', action='store_true', 
                              help='use ground truth depth.')
-    self.parser.add_argument('--fewshot_data', type=str, help='all_data (B+N) | novel_only | basenovel_fewshot')
+    self.parser.add_argument('--fewshot_data', type=str, help='all_data (B+N) | novel_only | basenovel_fewshot | base_only ')
+    self.parser.add_argument('--use_softmax', action='store_true')
+
   def parse(self, args=''):
     if args == '':
       opt = self.parser.parse_args()
