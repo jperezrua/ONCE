@@ -48,11 +48,12 @@ class PascalVOCEpisodic(data.Dataset):
 
     self.is_train = base
 
-    if opt.task == 'epdet':
-      if base:
-        print('There is currently no base classes split for voc')
-        exit()
-      else:
+    
+    if base:
+      print('There is currently no base classes split for voc')
+      exit()
+    else:
+      if opt.task == 'epdet':
         # if 'novel' we will use the COCO instances_novel_train2017.json file for
         # sampling the support set, and test2007.json for query
         self.annot_path = os.path.join(
@@ -62,6 +63,16 @@ class PascalVOCEpisodic(data.Dataset):
           self.coco_data_dir, 'annotations', 
           'instances_novel_train2017.json')
         self.supp_img_dir = os.path.join(self.coco_data_dir, 'train2017')
+      elif opt.task == 'reweight_paper':
+        # if 'novel' we will use the COCO instances_novel_train2017.json file for
+        # sampling the support set, and test2007.json for query
+        self.annot_path = os.path.join(
+          self.data_dir, 'annotations', 
+          'pascal_{}.json'.format(_ann_name[split]))
+        self.annot_supp_path = os.path.join(
+          self.coco_data_dir, 'annotations', 
+          'instances_fewshotonly_train2017.json')
+        self.supp_img_dir = os.path.join(self.coco_data_dir, 'train2017')        
               
     self.max_objs = 128
     
@@ -101,14 +112,39 @@ class PascalVOCEpisodic(data.Dataset):
     self._valid_ids = val_ids
 
     ## pascal voc categories
-    self.class_name = [
+    self.coco_class_name = [
             '__background__', "person", "bicycle", "car", "motorcycle", "airplane", 
             "bus", "train", "boat", "bird", "cat", "dog", "horse", "sheep", "cow", 
-            "bottle", "cha ir", "couch",  "potted plant", "dining table", "tv"
+            "bottle", "chair", "couch",  "potted plant", "dining table", "tv"
                      ]
+
+    self.voc_correspondence = {
+        '__background__': 0, 
+        "person": 15, 
+        "bicycle": 2, 
+        "car": 7, 
+        "motorcycle": 14, 
+        "airplane": 1, 
+        "bus": 6, 
+        "train": 19, 
+        "boat": 4, 
+        "bird": 3, 
+        "cat": 8, 
+        "dog": 12, 
+        "horse": 13, 
+        "sheep": 17, 
+        "cow": 10, 
+        "bottle": 5,
+        "chair": 9,
+        "couch": 18,
+        "potted plant": 16,
+        "dining table": 11,
+        "tv": 20
+    }
 
     pascal_all_ids = [i+1 for i in range(20)]
     self._pascal_valid_ids = pascal_all_ids
+    self._fewshot_ids = self._valid_ids
       
     self.cat_ids = {v: i for i, v in enumerate(self._pascal_valid_ids)}
     self.voc_color = [(v // 32 * 64 + 64, (v // 8) % 4 * 64, v % 8 * 32) \
@@ -128,6 +164,7 @@ class PascalVOCEpisodic(data.Dataset):
     print('==> initializing coco 2017 {} data.'.format(split))
     self.coco = coco.COCO(self.annot_path)
     self.coco_support = coco.COCO(self.annot_supp_path)
+    self.coco_supp = self.coco_support #omg, in other files I name this coco_supp, fix this!
     
     self.query_images = self.coco.getImgIds()
 
@@ -143,7 +180,10 @@ class PascalVOCEpisodic(data.Dataset):
     detections = []
     for image_id in all_bboxes:
       for cls_ind in all_bboxes[image_id]:
-        category_id = self._pascal_valid_ids[cls_ind - 1]
+        
+        coco_name = self.coco_class_name[cls_ind]
+        category_id = self.voc_correspondence[coco_name]
+
         for bbox in all_bboxes[image_id][cls_ind]:
           bbox[2] -= bbox[0]
           bbox[3] -= bbox[1]

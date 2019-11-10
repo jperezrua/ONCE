@@ -232,6 +232,7 @@ class opts(object):
     self.parser.add_argument('--k_shots', type=int, default=5)
     self.parser.add_argument('--min_bbox_len', type=int, default=20)
     self.parser.add_argument('--n_class', type=int, default=3)
+    self.parser.add_argument('--num_test_iters', type=int, default=2)
     self.parser.add_argument('--supp_w', type=int, default=96)
     self.parser.add_argument('--supp_h', type=int, default=96)
     self.parser.add_argument('--metasize', type=int, default=50)

@@ -49,7 +49,7 @@ class PrefetchDataset(torch.utils.data.Dataset):
       good_anns  = dataset.coco_supp.loadAnns(ids=ann_ids) #good_anns[:self.opt.k_shots]
 
       good_anns = [a for a in good_anns if a['category_id'] == catid]
-
+      
       if len(good_anns)>=self.opt.k_shots:
         sampled_good_anns = random.sample(good_anns, self.opt.k_shots)
       else:
@@ -77,7 +77,7 @@ class PrefetchDataset(torch.utils.data.Dataset):
 
         inp = cv2.resize(inp, (int(self.opt.supp_w), int(self.opt.supp_h)))
         inp = (inp.astype(np.float32) / 255.)
-        inp = (inp - self.mean) / self.std
+        inp = (inp - dataset.mean) / self.std
         inp = inp.transpose(2, 0, 1)
         supp_for_catid.append(inp)
       supp_for_catid = np.stack(supp_for_catid,axis=0)
@@ -175,7 +175,11 @@ def prefetch_test(opt):
   if opt.task != 'reweight_paper':
     Dataset = dataset_factory[opt.dataset]
   else:
-    Dataset = dataset_factory['coco_mixed']
+    if opt.dataset == 'coco_mixed' or opt.dataset == 'pascal_ep':
+      Dataset = dataset_factory[opt.dataset]
+    else:
+      print('Dataset error: Not allowed')
+      exit()
 
   opt = opts().update_dataset_info_and_set_heads(opt, Dataset)
   print(opt)
@@ -183,7 +187,7 @@ def prefetch_test(opt):
     
   split = 'val'# if not opt.trainval else 'test'
 
-  if opt.task != 'reweight_paper':
+  if opt.task != 'reweight_paper' or (opt.task == 'reweight_paper' and opt.dataset == 'pascal_ep'):
     dataset = Dataset(opt, split, base=False)
   else:
     dataset = Dataset(opt, split)
@@ -226,7 +230,7 @@ def prefetch_test(opt):
 if __name__ == '__main__':
   opt = opts().parse()
   list_stats = []
-  for i in range(100):
+  for i in range(opt.num_test_iters):
     print('************** iteration {} ***************'.format(i))
     list_stats.append( np.array( prefetch_test(opt) ) )
     if i>0:
