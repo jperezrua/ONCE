@@ -452,8 +452,8 @@ class MetaNet(nn.Module):
         batch_size = x.size(0)
         feat_dim   = x.size(1)
         outs = torch.nn.functional.conv2d(
-                    x.view(1, batch_size*feat_dim, x.size(2), x.size(3)),
-                    y_code.view(batch_size*feat_dim, 1, 1, 1), groups=batch_size*feat_dim,
+                    x.contiguous().view(1, batch_size*feat_dim, x.size(2), x.size(3)),
+                    y_code.contiguous().view(batch_size*feat_dim, 1, 1, 1), groups=batch_size*feat_dim,
                     bias=None
                 )
         outs = outs.view(batch_size, feat_dim, outs.size(2), outs.size(3))
