@@ -304,7 +304,7 @@ class opts(object):
       opt.load_model = os.path.join(model_path, 'model_last.pth')
     return opt
 
-  def update_dataset_info_and_set_heads(self, opt, dataset):
+  def update_dataset_info_and_set_heads(self, opt, dataset, inc_add=0):
     input_h, input_w = dataset.default_resolution
     opt.mean, opt.std = dataset.mean, dataset.std
     opt.num_classes = dataset.num_classes
@@ -341,6 +341,12 @@ class opts(object):
                    'wh': 2 if not opt.cat_spec_wh else 2 * opt.num_classes}
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
+    elif opt.task == 'incdet':
+      opt.heads = {'hm': inc_add,
+                   'wh': 2 * inc_add}
+      opt.num_classes = 60 + inc_add
+      if opt.reg_offset:
+        opt.heads.update({'reg': 2})        
     elif opt.task == 'multi_pose':
       # assert opt.dataset in ['coco_hp']
       opt.flip_idx = dataset.flip_idx

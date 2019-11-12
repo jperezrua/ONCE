@@ -16,6 +16,7 @@ from .dataset.coco_hp import COCOHP
 from .dataset.coco_base import COCOBase
 from .dataset.coco_episodic import COCOEpisodic
 from .dataset.coco_mixed import COCOMixed
+from .dataset.coco_incremental import COCOIncremental
 from .dataset.pascal_episodic import PascalVOCEpisodic
 
 dataset_factory = {
@@ -26,7 +27,8 @@ dataset_factory = {
   'coco_hp': COCOHP,
   'coco_base': COCOBase,
   'coco_ep': COCOEpisodic,
-  'coco_mixed': COCOMixed
+  'coco_mixed': COCOMixed,
+  'coco_inc': COCOIncremental
 }
 
 _sample_factory = {

@@ -16,6 +16,7 @@ from .networks.resnet_reweight_meta_multi import get_pose_net as get_pose_metamu
 from .networks.resnet_reweight_meta_full import get_pose_net as get_pose_metafull
 from .networks.resnet_reweight_meta_full_multi import get_pose_net as get_pose_metafullmulti
 from .networks.resnet_feature_reweight import get_pose_net as get_pose_net_fr
+from .networks.resnet_reweight_meta_inc import get_pose_net as get_pose_meta_inc
 
 #from .networks.dlav0 import get_pose_net as get_dlav0
 #from .networks.pose_dla_dcn import get_pose_net as get_dla_dcn
@@ -30,7 +31,8 @@ _model_factory = {
   'resmetamulti': get_pose_metamulti, #this is getting funny :D
   'resmetafull': get_pose_metafull,
   'resmetafullmulti': get_pose_metafullmulti, 
-  'resmetafr': get_pose_net_fr #centrenet-based feature reweight
+  'resmetafr': get_pose_net_fr,   #centrenet-based feature reweight
+  'resmetainc': get_pose_meta_inc
 }
 
 def create_model(arch, heads, head_conv, extras=None):
