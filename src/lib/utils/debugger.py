@@ -49,6 +49,8 @@ class Debugger(object):
       self.names = coconovel_class_name            
     elif num_classes == 1 or dataset == 'coco_ep':
       self.names = coconovel_class_name
+    elif dataset == 'coco_inc':
+      self.names = cocobase_class_name + coconovel_class_name
     elif num_classes == 60 or dataset == 'coco_base':
       self.names = cocobase_class_name      
     elif num_classes == 20 or dataset == 'pascal':
@@ -186,7 +188,7 @@ class Debugger(object):
     c = self.colors[cat][0][0].tolist()
     if self.theme == 'white':
       c = (255 - np.array(c)).tolist()
-    #print(cat, self.names)
+    #print(cat, self.names, len(self.names))
     txt = '{}{:.1f}'.format(self.names[cat], conf)
     font = cv2.FONT_HERSHEY_SIMPLEX
     cat_size = cv2.getTextSize(txt, font, 0.5, 2)[0]
@@ -484,7 +486,7 @@ cocobase_class_name = [
   'bed', 'toilet',
   'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave',
   'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
-  'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+  'scissors', 'teddy bear', 'hair drier', 'toothbrush'] + coconovel_class_name
 
 color_list = np.array(
         [

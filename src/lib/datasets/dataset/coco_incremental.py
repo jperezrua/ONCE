@@ -79,10 +79,10 @@ class COCOIncremental(data.Dataset):
       'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
     train_categories = [c for c in self.class_name if c != '__background__' and c not in val_categories]
-    self._valid_ids = val_ids
-    self._fewshot_ids = self._valid_ids
+    self._fewshot_ids = val_ids
 
-      
+    self._valid_ids = train_ids + val_ids[:num_novel_classes]
+
     self.cat_ids = {v: i for i, v in enumerate(self._valid_ids)}
     self.voc_color = [(v // 32 * 64 + 64, (v // 8) % 4 * 64, v % 8 * 32) \
                       for v in range(1, self.num_classes + 1)]
@@ -102,6 +102,10 @@ class COCOIncremental(data.Dataset):
 
     print('==> initializing coco 2017 {} data.'.format(self.split))
     self.coco = coco.COCO(self.annot_path)
+    print('COCO loaded the following file: ', self.annot_path)
+    print('Size of the annotations for {}'.format(val_ids[0:num_novel_classes]),  len(self.coco.getAnnIds( self.coco.getImgIds( catIds=val_ids[0:num_novel_classes] ) )) )
+    print('COCO len: ', len(self.coco.anns))
+    #exit()
     
     self.query_images = self.coco.getImgIds()
 

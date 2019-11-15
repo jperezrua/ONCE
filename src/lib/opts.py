@@ -342,9 +342,10 @@ class opts(object):
       if opt.reg_offset:
         opt.heads.update({'reg': 2})
     elif opt.task == 'incdet':
-      opt.heads = {'hm': inc_add,
-                   'wh': 2 * inc_add}
+      opt.heads = {'hm': 1,
+                   'wh': 2}
       opt.num_classes = 60 + inc_add
+      print('Num classes set to: ', opt.num_classes)
       if opt.reg_offset:
         opt.heads.update({'reg': 2})        
     elif opt.task == 'multi_pose':

@@ -41,14 +41,18 @@ class EpdetDetector(EpBaseDetector):
 
       output  = self.model.forward_multi_class(images, y_codes_)[-1]
       hm = output['hm'].sigmoid_()
+      #print(output['hm'].shape)
+      #hm = torch.nn.functional.softmax(output['hm'],dim=1)
+      hm[hm<0.05] = 0
+
+      #print(hm.shape)
+      #exit()
 
       #yescats=[1]#list(range(20))
       #yescats=list(range(20))
       #for c in range(20):
       #  if not c in yescats:
-      #    hm[:,c,:,:] *= 0
-      
-      
+      #    hm[:,c,:,:] *= 0     
 
       wh = output['wh']
       reg = output['reg'] if self.opt.reg_offset else None

@@ -121,34 +121,37 @@ def prefetch_test(opt, num_novel_classes=1):
 
   Dataset = dataset_factory['coco_inc']
   
-  opt = opts().update_dataset_info_and_set_heads(opt, Dataset, num_novel_classes)
+  opt = opts().update_dataset_info_and_set_heads(opt, Dataset, inc_add = num_novel_classes)
   print(opt)
   Logger(opt)
     
   split = 'val'# if not opt.trainval else 'test'
   dataset = Dataset(opt, num_novel_classes=num_novel_classes)
 
-  opt.num_classes = dataset.num_classes
+  #opt.num_classes = dataset.num_classes
   
   Detector = detector_factory['epdet']
   detector = Detector(opt)
 
 
   if opt.load_basemodel:
-    print('=====> Loading pretrained models')
+    print('=====> Loading pretrained hm wh heads from basemode models')
     l = torch.load(opt.load_basemodel)['state_dict']
-    mk,uk = detector.model.load_state_dict(l, strict=False)
-    print('Missing Keys for base model:    ',mk)
+    whweight = []
+    whbias = []
+    for i in range(60):
+      whweight.append(l['wh.weight'])
+      whbias.append(l['wh.bias'])
+    whweight = torch.cat(whweight, dim=0)
+    whbias = torch.cat(whbias, dim=0)
+    
+    #print(l['wh.weight'].shape,detector.model.wh_base.weight.shape)
+    mk_hm,uk_hm = detector.model.hm_base.load_state_dict({k[3:]:l[k] for k in l if 'hm' in k}, strict=True)
+    detector.model.wh_base.load_state_dict({'weight':whweight,'bias':whbias}, strict=True)
+    print('Missing Keys for base model:    ',mk_hm)
     print('')
-    print('Unknown Keys for base model:    ',uk)
+    print('Unknown Keys for base model:    ',uk_hm)
 
-  if opt.load_metamodel:
-    print('=====> Loading meta-pretrained models')
-    l = torch.load(opt.load_metamodel)['state_dict']
-    mk,uk = detector.model.rw.load_state_dict(l, strict=False)
-    print('Missing Keys for meta model:    ',mk)
-    print('')
-    print('Unknown Keys for meta model:    ',uk)
 
   
   data_loader = torch.utils.data.DataLoader(
@@ -162,7 +165,9 @@ def prefetch_test(opt, num_novel_classes=1):
   avg_time_stats = {t: AverageMeter() for t in time_stats}
   #this computes the support codes for a batch of supports with size [C,B=1,K_shots,img_dims...]
 
-  y_codes = detector.model.precompute_multi_class(data_loader.dataset.support_images) 
+  y_codes = detector.model.precompute_multi_class(data_loader.dataset.support_images)[0:num_novel_classes]
+  #print(y_codes.shape)
+  #exit()
 
   for ind, (img_id, pre_processed_images) in enumerate(data_loader):
     ret = detector.run(pre_processed_images, y_codes)
@@ -181,15 +186,16 @@ def prefetch_test(opt, num_novel_classes=1):
 if __name__ == '__main__':
   opt = opts().parse()
   list_stats = []
-  for i in range(opt.num_test_iters):
-    print('************** iteration {} ***************'.format(i))
-    list_stats.append( np.array( prefetch_test(opt) ) )
-    if i>0:
-      stats_ = np.stack(list_stats,axis=0)  
-      print(np.mean(stats_,axis=0))
-      print(np.std(stats_,axis=0))   
+  import matplotlib.pyplot as plt
+
+  for i in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]:
+    print('************** num_novel_classes={} ***************'.format(i))
+    list_stats.append( np.array( prefetch_test(opt, num_novel_classes=i) ) )
+    print('*******************************************')
+  
   stats = np.stack(list_stats,axis=0)
+  np.save('../exp/incdet/inc_results.npy', stats)
   
   print('STATS')
-  print(np.mean(stats,axis=0))
-  print(np.std(stats,axis=0))
+  for i,s in enumerate(list_stats):
+    print('Num novel classes: ', i,' stats: ', s)
