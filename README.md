@@ -38,7 +38,8 @@ python test_ep.py epdet --exp_id coco_ep_res50_ONCE_test --dataset coco_ep --arc
 
 - The 1 by 1 incremental setting can be tested from the same ONCE model by running:
 
+~~~
 python test_inc.py incdet --exp_id coco_ep_res50_ONCE_test_inc --dataset coco_ep --arch resmeta_50 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0 --k_shots 20  --load_model ../exp/epdet/coco_ep_res50_ONCE/model_best.pth --metasize 50 --cat_spec_wh --num_test_iters 1 --flip_test --keep_res --test_scales 0.75,1,1.25
-
+~~~
 
 
