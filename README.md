@@ -1,14 +1,14 @@
 # Incremental Few Shot Object Detection
 Implementation of the paper:
 
-`
+```
 @inproceedings{perez2020incremental,
   title={Incremental Few-Shot Object Detection},
   author={Perez-Rua, Juan-Manuel and Zhu, Xiatian and Hospedales, Timothy and Xiang, Tao},
   booktitle={CVPR},
   year={2020}
 }
-`
+```
 
 This code builds on the [**Objects as Points**](http://arxiv.org/abs/1904.07850) paper and is forked from and their official code repo.
 Please cite both papers if you use this code.
