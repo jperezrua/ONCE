@@ -10,7 +10,7 @@ Implementation of the paper:
 }
 ```
 
-This code builds on the [**Objects as Points**](http://arxiv.org/abs/1904.07850) paper and is forked from and their official code repo.
+This code builds on the [**Objects as Points**](http://arxiv.org/abs/1904.07850) paper and is forked from their official code repo.
 Please cite both papers if you use this code.
 
 
