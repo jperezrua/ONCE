@@ -18,6 +18,11 @@ Please cite both papers if you use this code.
 
 Most existing object detection methods rely on the availability of abundant labelled training samples per class and offline model training in a batch mode. These requirements substantially limit their scalability to open-ended accommodation of novel classes with limited labelled training data. We present a study aiming to go beyond these limitations by considering the Incremental Few-Shot Detection (iFSD) problem setting, where new classes must be registered incrementally (without revisiting base classes) and with few examples. To this end we propose OpeN-ended Centre nEt (ONCE), a detector designed for incrementally learning to detect novel class objects with few examples. This is achieved by an elegant adaptation of the CentreNet detector to the few-shot learning scenario, and meta-learning a class-specific code generator model for registering novel classes. ONCE fully respects the incremental learning paradigm, with novel class registration requiring only a single forward pass of few-shot training samples, and no access to base classes -- thus making it suitable for deployment on embedded devices. Extensive experiments conducted on both the standard object detection and fashion landmark detection tasks show the feasibility of iFSD for the first time, opening an interesting and very important line of research.
 
+## Set-up
+
+- First compile NMS code by going (`cd`) to `lib/external` and run `make`. Return to the repo root folder.
+- Now, download the COCO dataset and create a symlink `data/coco` that links to it.
+- Symlink the contents of the `data/coco_anns` folder included in this repo to the COCO annotation folder which should be `data/coco/annotations`.
 
 ## Training ONCE
 
