@@ -21,13 +21,21 @@ Most existing object detection methods rely on the availability of abundant labe
 
 ## Training ONCE
 
-The following python scripts can be found in the `src` directory of this repo.
+The following python scripts can be found in the `src` directory of this repo. To run the main experiments of the paper
+you should run the following scripts in a sequential way (you can edit the options to your taste).
+
+- Training of a backbone with the base classes of the COCO dataset. 
+  Training on the base set (classes with large training set) is used for feature extractor and to initialise the metamodel.
+  
+~~~
+python main.py ctdet --exp_id coco_res50_nohc_few --dataset coco_base --arch res_50 --batch_size 80 --master_batch 10 --lr 5e-4  --lr_step 90,120 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0  --cat_spec_wh
+~~~
 
 - Episodic training. The feature extractor and class code generator networks are both initialised from a 
 model supervised on the COCO base classes. Each episode consiste on a 3-way (--n_class) detection problem with 5 shots (--k_shots).
 
 ~~~
-python main_ep.py epdet --exp_id coco_ep_res50_ONCE --dataset coco_ep --arch resmetafull_50 --batch_size 32 --master_batch 4 --lr 1e-4 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0 --n_class 3 --k_shots 5 --cat_spec_wh --load_basemodel ../models/coco_res50_nohc_few/model_30.pth --load_metamodel ../models/coco_res50_nohc_few/model_30.pth --metasize 50
+python main_ep.py epdet --exp_id coco_ep_res50_ONCE --dataset coco_ep --arch resmetafull_50 --batch_size 32 --master_batch 4 --lr 1e-4 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0 --n_class 3 --k_shots 5 --cat_spec_wh --load_basemodel ../exp/ctdet/coco_res50_nohc_few/model_30.pth --load_metamodel ../exp/ctdet/coco_res50_nohc_few/model_30.pth --metasize 50
 ~~~
 
 - Testing the trained ONCE model by running 100 experiments (20-way with 5-shots):
