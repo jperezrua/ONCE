@@ -1,0 +1,11 @@
+Base Training
+python main.py ctdet --exp_id coco_res50_nohc_few --dataset coco_base --arch res_50 --batch_size 80 --master_batch 10 --lr 5e-4  --lr_step 90,120 --gpus 0 --num_workers 8 --head_conv 0  --cat_spec_wh
+
+Episodic Training
+python main_ep.py epdet --exp_id coco_ep_res50_ONCE --dataset coco_ep --arch resmetafull_50 --batch_size 32 --master_batch 4 --lr 1e-4 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0 --n_class 3 --k_shots 5 --cat_spec_wh --load_basemodel ../exp/ctdet/coco_res50_nohc_few/model_30.pth --load_metamodel ../exp/ctdet/coco_res50_nohc_few/model_30.pth --metasize 50
+
+Testing
+python test_ep.py epdet --exp_id coco_ep_res50_ONCE_test --dataset coco_ep --arch resmeta_50 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0 --k_shots 5  --load_model ../exp/epdet/coco_ep_res50_ONCE/model_best.pth --metasize 50 --cat_spec_wh --num_test_iters 100 --flip_test --keep_res --test_scales 0.75,1,1.25
+
+Incremental Learning
+python test_inc.py incdet --exp_id coco_ep_res50_ONCE_test_inc --dataset coco_ep --arch resmeta_50 --gpus 0,1,2,3,4,5,6,7 --num_workers 24 --head_conv 0 --k_shots 20  --load_model ../exp/epdet/coco_ep_res50_ONCE/model_best.pth --metasize 50 --cat_spec_wh --num_test_iters 1 --flip_test --keep_res --test_scales 0.75,1,1.25

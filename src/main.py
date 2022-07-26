@@ -92,7 +92,8 @@ def main(opt):
         logger.write('{} {:8f} | '.format(k, v))
       if log_dict_val[opt.metric] < best:
         best = log_dict_val[opt.metric]
-        save_model(os.path.join(opt.save_dir, 'model_best.pth'), 
+        best = log_dict_val[opt.metric]
+        save_model(os.path.join(opt.save_dir, 'model_best.pth'),
                    epoch, model)
     else:
       save_model(os.path.join(opt.save_dir, 'model_last.pth'), 
