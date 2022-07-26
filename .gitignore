@@ -1,3 +1,5 @@
+exp/
+
 legacy/*
 .DS_Store
 debug/*
